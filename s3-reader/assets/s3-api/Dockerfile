@@ -22,6 +22,7 @@ COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 COPY s3_api ./s3_api
 
+# TODO: parametrize
 EXPOSE 5000
 
 ENTRYPOINT ["python", "-m", "s3_api.api"]
