@@ -17,6 +17,22 @@
     ]
   },
   "context": {
+    "dev": {
+      "fargate" : {
+        "cpu": 256,
+        "memoryLimitMiB": 512,
+        "maxCapacity": 2
+      },
+      "bucketRemovalPolicy": "destroy"
+    },
+    "prod": {
+      "fargate" : {
+        "cpu": 1024,
+        "memoryLimitMiB": 2048,
+        "maxCapacity": 5
+      },
+      "bucketRemovalPolicy": "retain"
+    },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/core:target-partitions": [
