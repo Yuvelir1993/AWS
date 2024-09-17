@@ -18,11 +18,10 @@ FROM python:3.12.6-alpine AS runtime
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
 
-COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+ARG API_PORT=5000
 
-COPY s3_api ./s3_api
+ENV API_PORT=${API_PORT}
 
-# TODO: parametrize
-EXPOSE 5000
+EXPOSE ${API_PORT}
 
 ENTRYPOINT ["python", "-m", "s3_api.api"]

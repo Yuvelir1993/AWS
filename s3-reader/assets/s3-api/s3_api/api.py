@@ -2,8 +2,7 @@ import os
 from flask import Flask, jsonify
 app = Flask(__name__)
 
-# TODO: parametrize
-port = int(os.environ.get('PORT', 5000))
+port = int(os.environ.get('API_PORT', 5000))
 
 
 @app.route("/")
