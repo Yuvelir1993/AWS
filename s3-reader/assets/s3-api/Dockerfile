@@ -11,12 +11,16 @@ WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
 
-RUN poetry install --no-interaction --no-root && rm -rf $POETRY_CACHE_DIR
+RUN poetry install --no-interaction && rm -rf $POETRY_CACHE_DIR
 
 FROM python:3.12.6-alpine AS runtime
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
+
+COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+
+COPY s3_api ./s3_api
 
 ARG API_PORT=5000
 
