@@ -5,7 +5,7 @@ import * as aws_lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import path = require("path");
 
-export class S3StorageStack extends cdk.Stack {
+export class DataProcessingStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
