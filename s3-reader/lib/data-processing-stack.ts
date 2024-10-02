@@ -38,9 +38,7 @@ export class DataProcessingStack extends cdk.Stack {
       {
         runtime: aws_lambda.Runtime.PYTHON_3_12,
         handler: "lambda-handler.main",
-        code: aws_lambda.Code.fromAsset(
-          path.resolve(__dirname, "../lib/lambda")
-        ),
+        code: aws_lambda.Code.fromAsset(path.join(__dirname, "lambda")),
       }
     );
     const lambdaDestination = new s3_notifications.LambdaDestination(
