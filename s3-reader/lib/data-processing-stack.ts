@@ -1,5 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import * as s3 from "aws-cdk-lib/aws-s3";
+// import * as iam from "aws-cdk-lib/aws-iam";
 import * as s3_notifications from "aws-cdk-lib/aws-s3-notifications";
 import * as aws_lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
@@ -13,6 +14,7 @@ export class DataProcessingStack extends cdk.Stack {
     const envConfig = this.node.tryGetContext(process.env.CDK_ENV || "dev");
     const s3PrefixDocumentation = "documentation";
     const s3PrefixDocumentationMetadata = "documentationMetadata";
+    const s3DocLinksJson = "docLinks.json";
 
     const removalPolicy =
       envConfig.bucketRemovalPolicy === "retain"
@@ -23,27 +25,32 @@ export class DataProcessingStack extends cdk.Stack {
       versioned: true,
       removalPolicy,
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
-      // lifecycleRules: [
-      //   {
-      //     id: "deleteOldVersions",
-      //     prefix: s3PrefixDocumentation,
-      //     enabled: true,
-      //     expiration: cdk.Duration.days(7),
-      //   },
-      // ],
+
+      // -----------------------------------
+      // Uncomment only for tests!
+      // -----------------------------------
+      // publicReadAccess: true,
+      // blockPublicAccess: {
+      //   blockPublicAcls: false,
+      //   blockPublicPolicy: false,
+      //   ignorePublicAcls: false,
+      //   restrictPublicBuckets: false,
+      // },
+      // websiteIndexDocument: 'index.html',
     });
+    // bucket.grantRead(new iam.AnyPrincipal());
 
     const lambdaFunctionDocuMetadataProcessing = new aws_lambda.Function(
       this,
       "LambdaFunctionDocuMetadataProcessing",
       {
         runtime: aws_lambda.Runtime.PYTHON_3_12,
-        handler: "lambda-handler.read_from_s3",
+        handler: "lambda-handler.generate_doc_links_on_upload",
         code: aws_lambda.Code.fromAsset(path.join(__dirname, "lambda")),
         environment: {
           BUCKET_NAME: bucket.bucketName,
           PREFIX_DOCUMENTATION: s3PrefixDocumentation,
-          PREFIX_DOCUMENTATION_METADATA: s3PrefixDocumentationMetadata,
+          DOC_LINKS_FILE_PATH: `${s3PrefixDocumentationMetadata}/${s3DocLinksJson}`,
         },
         layers: [
           this.createDependenciesLayer(this.stackName, "lambda/lambda-handler"),
@@ -58,7 +65,19 @@ export class DataProcessingStack extends cdk.Stack {
       prefix: s3PrefixDocumentation,
       suffix: ".zip",
     });
-    bucket.grantRead(lambdaFunctionDocuMetadataProcessing);
+    bucket.grantRead(
+      lambdaFunctionDocuMetadataProcessing,
+      `${s3PrefixDocumentation}/*.zip`
+    );
+    bucket.grantReadWrite(
+      lambdaFunctionDocuMetadataProcessing,
+      `${s3PrefixDocumentationMetadata}/${s3DocLinksJson}`
+    );
+
+    new cdk.CfnOutput(this, "UploadCommand", {
+      value: `aws s3 cp test-1.0.0.zip s3://${bucket.bucketName}/${s3PrefixDocumentation}/test-1.0.0.zip`,
+      description: "Test AWS CLI command to upload the project zip file to S3",
+    });
   }
 
   private createDependenciesLayer(
