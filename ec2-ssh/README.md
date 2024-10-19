@@ -27,11 +27,12 @@ Example is based on [cdk-ec2 example](https://github.com/cloudbrilliant/cdk-ec2)
 
 ## Download key as .pem file locally
 (key name string will look something like this /ec2/keypair/key-000000)
-`aws ssm get-parameter --name <keyname> --with-decryption --query "Parameter.Value" --output text > mykey.pem `
+`aws ssm get-parameter --name /ec2/keypair/key-025f6bcea3039c5b0 --with-decryption --query "Parameter.Value" --output text > mykey.pem`
 
 ## Set file permissions
+Move to WSL first since Windows filesystem not handling it correctly.
 `chmod 400 mykey.pem`
 
 ## SSH into new instance
 (update ec2-00-00-00-00.compute-1.amazonaws.com)
-`ssh -i "mykey.pem" ec2-user@ec2-00-00-00-00.compute-1.amazonaws.com`
+`ssh -i "mykey.pem" ec2-user@ec2-3-70-247-208.eu-central-1.compute.amazonaws.com`
