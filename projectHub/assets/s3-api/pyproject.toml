@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "s3-api"
+version = "1.0.0"
+description = "API for communication with AWS S3."
+authors = ["plozovik <plozovikov@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+flask = "^3.0.3"
+requests = "^2.32.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
