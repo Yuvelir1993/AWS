@@ -23,6 +23,7 @@ export class Ec2SshStack extends cdk.Stack {
       allowAllOutbound: true,
     });
     mySecurityGroup.addIngressRule(
+      // Can I retrieve here my ip?
       ec2.Peer.anyIpv4(),
       ec2.Port.tcp(22),
       "Allow SSH access from the world"
