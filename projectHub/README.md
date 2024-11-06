@@ -1,7 +1,8 @@
-# Welcome to your CDK TypeScript project
+# Project Hub
+Project which will aggregate your project's documentations and will serve as an entry point.
+![Project Hub architecture with blue/green deployment strategy](./resource/projectHub.png)
 
-This is a blank project for CDK development with TypeScript.
-
+# Dev
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 ## Useful CDK commands
