@@ -12,18 +12,18 @@ interface MyStackProps extends cdk.StackProps {
 }
 
 export class DataProcessingStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.MyStackProps) {
+  constructor(scope: Construct, id: string, props: MyStackProps) {
     super(scope, id, props);
 
-    const s3PrefixDocumentation = "documentation";
-    const s3PrefixDocumentationMetadata = "documentationMetadata";
-    const s3DocLinksJson = "docLinks.json";
+    const s3ProjectsSpace = "projects";
+    const s3ProjectsDocLinks = "docLinks.json";
     const removalPolicy =
       props.envConfig.bucketRemovalPolicy === "retain"
         ? cdk.RemovalPolicy.RETAIN
         : cdk.RemovalPolicy.DESTROY;
 
     const bucket = new s3.Bucket(this, "S3StorageBucket", {
+      bucketName: props.envConfig.bucketName,
       versioned: true,
       removalPolicy,
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
@@ -51,8 +51,8 @@ export class DataProcessingStack extends cdk.Stack {
         code: aws_lambda.Code.fromAsset(path.join(__dirname, "lambda")),
         environment: {
           BUCKET_NAME: bucket.bucketName,
-          PREFIX_DOCUMENTATION: s3PrefixDocumentation,
-          DOC_LINKS_FILE_PATH: `${s3PrefixDocumentationMetadata}/${s3DocLinksJson}`,
+          PROJECTS_SPACE: s3ProjectsSpace,
+          DOC_LINKS_FILE_PATH: s3ProjectsDocLinks,
         },
         layers: [
           this.createDependenciesLayer(this.stackName, "lambda/lambda-handler"),
@@ -64,20 +64,20 @@ export class DataProcessingStack extends cdk.Stack {
     );
 
     bucket.addObjectCreatedNotification(lambdaDestination, {
-      prefix: s3PrefixDocumentation,
+      prefix: s3ProjectsSpace,
       suffix: ".zip",
     });
     bucket.grantRead(
       lambdaFunctionDocuMetadataProcessing,
-      `${s3PrefixDocumentation}/*.zip`
+      `${s3ProjectsSpace}/*.zip`
     );
     bucket.grantReadWrite(
       lambdaFunctionDocuMetadataProcessing,
-      `${s3PrefixDocumentationMetadata}/${s3DocLinksJson}`
+      s3ProjectsDocLinks
     );
 
     new cdk.CfnOutput(this, "UploadCommand", {
-      value: `aws s3 cp test-1.0.0.zip s3://${bucket.bucketName}/${s3PrefixDocumentation}/test-1.0.0.zip`,
+      value: `aws s3 cp test-1.0.0.zip s3://${bucket.bucketName}/${s3ProjectsSpace}/test-1.0.0.zip`,
       description: "Test AWS CLI command to upload the project zip file to S3",
     });
   }

@@ -22,12 +22,12 @@ def generate_doc_links_on_upload(event, context):
           context.get_remaining_time_in_millis())
 
     bucket_name = os.environ.get('BUCKET_NAME')
-    prefix_documentation = os.environ.get('PREFIX_DOCUMENTATION')
-    doc_links_file_path = os.environ.get('DOC_LINKS_FILE_PATH')
+    doc_links_json = os.environ.get('DOC_LINKS_FILE_PATH')
+    projects_space = os.environ.get('PROJECTS_SPACE')
 
     print(f"Environment - BUCKET_NAME: {bucket_name}")
-    print(f"Environment - PREFIX_DOCUMENTATION: {prefix_documentation}")
-    print(f"Environment - DOC_LINKS_FILE_PATH: {doc_links_file_path}")
+    print(f"Environment - PROJECTS_SPACE: {projects_space}")
+    print(f"Environment - DOC_LINKS_FILE_PATH: {doc_links_json}")
 
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = urllib.parse.unquote_plus(
@@ -64,23 +64,23 @@ def generate_doc_links_on_upload(event, context):
 
         try:
             metadata_response = s3.get_object(
-                Bucket=bucket_name, Key=doc_links_file_path)
+                Bucket=bucket_name, Key=doc_links_json)
             metadata_content = metadata_response['Body'].read().decode('utf-8')
             doc_links = json.loads(metadata_content)
-            print(f"Existing {doc_links_file_path} loaded. Version: {
+            print(f"Existing {doc_links_json} loaded. Version: {
                   metadata_response.get('VersionId', 'N/A')}")
         except s3.exceptions.NoSuchKey:
-            print(f"{doc_links_file_path} does not exist.")
+            print(f"{doc_links_json} does not exist.")
 
         doc_links.append(new_doc_links_entry)
 
         s3.put_object(
             Bucket=bucket_name,
-            Key=doc_links_file_path,
+            Key=doc_links_json,
             Body=json.dumps(doc_links, indent=2),
             ContentType='application/json'
         )
-        print(f"{doc_links_file_path} updated successfully.")
+        print(f"{doc_links_json} updated successfully.")
 
     except Exception as e:
         print(f"Error processing {key} from bucket {bucket}. Exception: {e}")

@@ -19,9 +19,11 @@
   "context": {
     "environment": {
       "blue": {
+        "bucketName": "ProjectHubBucketBlue",
         "bucketRemovalPolicy": "retain"
       },
       "green": {
+        "bucketName": "ProjectHubBucketGreen",
         "bucketRemovalPolicy": "destroy"
       }
     },
