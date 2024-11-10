@@ -1,4 +1,3 @@
-// src/pages/Projects.tsx
 import React, { useEffect, useState } from "react";
 import ProjectList from "../components/projects/ProjectList";
 import ProjectReadme from "../components/projects/ProjectReadme";
@@ -52,15 +51,34 @@ const Projects = () => {
   if (loading) return <p>Loading documentation links...</p>;
 
   return (
-    <div>
-      <ProjectList docLinks={docLinks} onSelectProject={handleProjectClick} />
-      {selectedProject && (
-        <ProjectReadme
-          selectedProject={selectedProject}
-          readmeContent={readmeContent}
-          readmeLoading={readmeLoading}
-        />
-      )}
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <aside className="w-64 bg-gray-100 p-4 border-r border-gray-300">
+        <ProjectList docLinks={docLinks} onSelectProject={handleProjectClick} />
+      </aside>
+
+      {/* Main content area */}
+      <main className="flex-1 p-6">
+        {selectedProject ? (
+          <ProjectReadme
+            selectedProject={selectedProject}
+            readmeContent={readmeContent}
+            readmeLoading={readmeLoading}
+          />
+        ) : (
+          <div className="text-gray-700">
+            <h3 className="text-2xl font-semibold mb-4">Welcome!</h3>
+            <p className="mb-4">
+              Select a project from the list on the left to view its
+              documentation.
+            </p>
+            <p>
+              Here, you’ll find detailed README files and other documentation
+              for each project version.
+            </p>
+          </div>
+        )}
+      </main>
     </div>
   );
 };

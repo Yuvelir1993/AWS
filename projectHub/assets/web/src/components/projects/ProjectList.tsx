@@ -1,7 +1,6 @@
 import React from "react";
 
 const ProjectList = ({ docLinks, onSelectProject }) => {
-  // Group projects by name
   const groupedProjects = docLinks.reduce((acc, doc) => {
     if (!acc[doc.name]) {
       acc[doc.name] = [];
@@ -12,9 +11,6 @@ const ProjectList = ({ docLinks, onSelectProject }) => {
 
   return (
     <div className="p-6 max-w-lg mx-auto font-sans">
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">
-        Project Documentation Links
-      </h2>
       <ul className="space-y-3">
         {Object.keys(groupedProjects).map((projectName) => {
           const versions = groupedProjects[projectName];
