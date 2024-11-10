@@ -1,8 +1,8 @@
 {
-  "name": "s3-parser",
+  "name": "app-project-hub",
   "version": "0.1.0",
   "bin": {
-    "s3-parser": "bin/s3-parser.js"
+    "app-project-hub": "bin/app-project-hub.js"
   },
   "scripts": {
     "build": "tsc",
@@ -22,7 +22,7 @@
   "dependencies": {
     "aws-cdk-lib": "2.161.0",
     "constructs": "^10.3.0",
-    "s3-parser": "file:",
+    "app-project-hub": "file:",
     "source-map-support": "^0.5.21"
   }
 }

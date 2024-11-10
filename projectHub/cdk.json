@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --prefer-ts-exts bin/s3-parser.ts",
+  "app": "npx ts-node --prefer-ts-exts bin/app-project-hub.ts",
   "watch": {
     "include": [
       "**"
