@@ -30,34 +30,38 @@ def generate_doc_links_on_upload(event, context):
     print(f"Environment - DOC_LINKS_JSON: {doc_links_json}")
 
     bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.parse.unquote_plus(
+    uploaded_object_key = urllib.parse.unquote_plus(
         event['Records'][0]['s3']['object']['key'], encoding='utf-8')
 
     print(f"Event - Bucket name: {bucket}")
-    print(f"Event - Object name: {key}")
+    print(f"Event - Object name: {uploaded_object_key}")
 
     pattern = r"^([a-zA-Z0-9_-]+)-([a-zA-Z0-9._-]+)\.zip$"
-    filename = os.path.basename(key)
-    match = re.match(pattern, filename)
+    uploaded_filename = os.path.basename(uploaded_object_key)
+    match = re.match(pattern, uploaded_filename)
 
     if not match:
-        print(f"Invalid filename pattern: {filename}. Skipping this file.")
+        print(f"Invalid filename pattern: {
+              uploaded_filename}. Skipping this file.")
         return {
             'statusCode': 400,
-            'body': json.dumps(f"Invalid file name pattern: {filename}")
+            'body': json.dumps(f"Invalid file name pattern: {uploaded_filename}")
         }
 
-    projectname, projectversion = match.groups()
-    print(f"Extracted Project Name: {projectname}, Version: {projectversion}")
+    project_name, project_version = match.groups()
+    print(f"Extracted Project Name: {project_name}, Version: {project_version}")
 
     try:
-        s3_docu_url = f"https://{bucket}.s3.amazonaws.com/{
-            key.replace('.zip', '/index.html')}"
+        s3_index_html_url = f"https://{bucket}.s3.amazonaws.com/{projects_space}/{
+            uploaded_object_key.replace('.zip', '/index.html')}"
+        s3_readme_url = f"https://{bucket}.s3.amazonaws.com/{projects_space}/{
+            uploaded_object_key.replace('.zip', '/index.html')}"
 
         new_doc_links_entry = {
-            "name": projectname,
-            "version": projectversion,
-            "url": s3_docu_url
+            "name": project_name,
+            "version": project_version,
+            "urlIndexHtml": s3_index_html_url,
+            "urlReadme": s3_readme_url
         }
 
         doc_links = []
@@ -83,5 +87,6 @@ def generate_doc_links_on_upload(event, context):
         print(f"{doc_links_json} updated successfully.")
 
     except Exception as e:
-        print(f"Error processing {key} from bucket {bucket}. Exception: {e}")
+        print(f"Error processing {uploaded_object_key} from bucket {
+              bucket}. Exception: {e}")
         raise e
