@@ -42,9 +42,9 @@ export class DataProcessingStack extends cdk.Stack {
     });
     // bucket.grantRead(new iam.AnyPrincipal());
 
-    const lambdaFunctionDocuMetadataProcessing = new aws_lambda.Function(
+    const lambdaProjectDocsProcessing = new aws_lambda.Function(
       this,
-      "LambdaFunctionDocuMetadataProcessing",
+      "LambdaProjectDocsProcessing",
       {
         runtime: aws_lambda.Runtime.PYTHON_3_12,
         handler: "lambda-handler.generate_doc_links_on_upload",
@@ -60,7 +60,7 @@ export class DataProcessingStack extends cdk.Stack {
       }
     );
     const lambdaDestination = new s3_notifications.LambdaDestination(
-      lambdaFunctionDocuMetadataProcessing
+      lambdaProjectDocsProcessing
     );
 
     bucket.addObjectCreatedNotification(lambdaDestination, {
@@ -68,10 +68,10 @@ export class DataProcessingStack extends cdk.Stack {
       suffix: ".zip",
     });
     bucket.grantRead(
-      lambdaFunctionDocuMetadataProcessing,
+      lambdaProjectDocsProcessing,
       `${s3ProjectsSpace}/*.zip`
     );
-    bucket.grantReadWrite(lambdaFunctionDocuMetadataProcessing, s3DocLinks);
+    bucket.grantReadWrite(lambdaProjectDocsProcessing, s3DocLinks);
 
     new cdk.CfnOutput(this, "UploadCommand", {
       value: `aws s3 cp test-1.0.0.zip s3://${bucket.bucketName}/${s3ProjectsSpace}/test-1.0.0.zip`,

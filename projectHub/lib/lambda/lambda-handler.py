@@ -64,7 +64,7 @@ def generate_doc_links_on_upload(event, context):
 
         try:
             metadata_response = s3.get_object(
-                Bucket=bucket_name, Key=doc_links_json)
+                Bucket=bucket, Key=doc_links_json)
             metadata_content = metadata_response['Body'].read().decode('utf-8')
             doc_links = json.loads(metadata_content)
             print(f"Existing {doc_links_json} loaded. Version: {
@@ -75,7 +75,7 @@ def generate_doc_links_on_upload(event, context):
         doc_links.append(new_doc_links_entry)
 
         s3.put_object(
-            Bucket=bucket_name,
+            Bucket=bucket,
             Key=doc_links_json,
             Body=json.dumps(doc_links, indent=2),
             ContentType='application/json'
