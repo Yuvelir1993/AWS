@@ -17,11 +17,13 @@
     ]
   },
   "context": {
-    "blue": {
-      "bucketRemovalPolicy": "retain"
-    },
-    "green": {
-      "bucketRemovalPolicy": "destroy"
+    "environment": {
+      "blue": {
+        "bucketRemovalPolicy": "retain"
+      },
+      "green": {
+        "bucketRemovalPolicy": "destroy"
+      }
     },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,

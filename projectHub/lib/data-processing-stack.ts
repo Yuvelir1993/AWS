@@ -7,17 +7,19 @@ import { Construct } from "constructs";
 import * as child_process from "child_process";
 import path = require("path");
 
+interface MyStackProps extends cdk.StackProps {
+  envConfig: any;
+}
+
 export class DataProcessingStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: cdk.MyStackProps) {
     super(scope, id, props);
 
-    const envConfig = this.node.tryGetContext(process.env.CDK_ENV || "dev");
     const s3PrefixDocumentation = "documentation";
     const s3PrefixDocumentationMetadata = "documentationMetadata";
     const s3DocLinksJson = "docLinks.json";
-
     const removalPolicy =
-      envConfig.bucketRemovalPolicy === "retain"
+      props.envConfig.bucketRemovalPolicy === "retain"
         ? cdk.RemovalPolicy.RETAIN
         : cdk.RemovalPolicy.DESTROY;
 
