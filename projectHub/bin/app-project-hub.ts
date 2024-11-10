@@ -17,4 +17,7 @@ if (!targetEnvConfig) {
   );
 }
 
-new DataProcessingStack(app, "S3StorageStack", { targetEnv, targetEnvConfig });
+new DataProcessingStack(app, `ProjectHubStack-${targetEnv}`, {
+  targetEnv,
+  targetEnvConfig,
+});
