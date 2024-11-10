@@ -10,11 +10,11 @@ if (!targetEnv) {
     "Environment not specified! Use '-c targetEnv=blue' or '-c targetEnv=green'"
   );
 }
-const envConfig = app.node.tryGetContext("environment")[targetEnv];
-if (!envConfig) {
+const targetEnvConfig = app.node.tryGetContext("environment")[targetEnv];
+if (!targetEnvConfig) {
   throw new Error(
     `Environment configuration for '${targetEnv}' not found in cdk.json`
   );
 }
 
-new DataProcessingStack(app, "S3StorageStack", { envConfig });
+new DataProcessingStack(app, "S3StorageStack", { targetEnv, targetEnvConfig });

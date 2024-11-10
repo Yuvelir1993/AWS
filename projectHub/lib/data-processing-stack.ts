@@ -8,7 +8,8 @@ import * as child_process from "child_process";
 import path = require("path");
 
 interface MyStackProps extends cdk.StackProps {
-  envConfig: any;
+  targetEnv: String;
+  targetEnvConfig: any;
 }
 
 export class DataProcessingStack extends cdk.Stack {
@@ -18,12 +19,12 @@ export class DataProcessingStack extends cdk.Stack {
     const s3ProjectsSpace = "projects";
     const s3DocLinks = "docLinks.json";
     const removalPolicy =
-      props.envConfig.bucketRemovalPolicy === "retain"
+      props.targetEnvConfig.bucketRemovalPolicy === "retain"
         ? cdk.RemovalPolicy.RETAIN
         : cdk.RemovalPolicy.DESTROY;
 
     const bucket = new s3.Bucket(this, "S3StorageBucket", {
-      bucketName: props.envConfig.bucketName,
+      bucketName: props.targetEnvConfig.bucketName,
       versioned: true,
       removalPolicy,
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
@@ -42,6 +43,8 @@ export class DataProcessingStack extends cdk.Stack {
     });
     // bucket.grantRead(new iam.AnyPrincipal());
 
+    // TODO: test if with current set up there is a single Lambda for both blue/green environments
+    const lambdaFunctionName = `ProjectDocsProcessingLambda-${props.targetEnv}`;
     const lambdaProjectDocsProcessing = new aws_lambda.Function(
       this,
       "LambdaProjectDocsProcessing",
@@ -67,10 +70,7 @@ export class DataProcessingStack extends cdk.Stack {
       prefix: s3ProjectsSpace,
       suffix: ".zip",
     });
-    bucket.grantRead(
-      lambdaProjectDocsProcessing,
-      `${s3ProjectsSpace}/*.zip`
-    );
+    bucket.grantRead(lambdaProjectDocsProcessing, `${s3ProjectsSpace}/*.zip`);
     bucket.grantReadWrite(lambdaProjectDocsProcessing, s3DocLinks);
 
     new cdk.CfnOutput(this, "UploadCommand", {
