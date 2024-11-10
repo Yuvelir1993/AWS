@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import ProjectList from "../components/projects/ProjectList";
 import ProjectReadme from "../components/projects/ProjectReadme";
 import mockDocLinks from "../mocks/projects";
+import "../css/projects.css";
 
 const Projects = () => {
   const [docLinks, setDocLinks] = useState([]);
