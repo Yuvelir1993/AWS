@@ -22,12 +22,12 @@ def generate_doc_links_on_upload(event, context):
           context.get_remaining_time_in_millis())
 
     bucket_name = os.environ.get('BUCKET_NAME')
-    doc_links_json = os.environ.get('DOC_LINKS_FILE_PATH')
+    doc_links_json = os.environ.get('DOC_LINKS_JSON')
     projects_space = os.environ.get('PROJECTS_SPACE')
 
     print(f"Environment - BUCKET_NAME: {bucket_name}")
     print(f"Environment - PROJECTS_SPACE: {projects_space}")
-    print(f"Environment - DOC_LINKS_FILE_PATH: {doc_links_json}")
+    print(f"Environment - DOC_LINKS_JSON: {doc_links_json}")
 
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = urllib.parse.unquote_plus(

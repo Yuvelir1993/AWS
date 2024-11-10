@@ -16,7 +16,7 @@ export class DataProcessingStack extends cdk.Stack {
     super(scope, id, props);
 
     const s3ProjectsSpace = "projects";
-    const s3ProjectsDocLinks = "docLinks.json";
+    const s3DocLinks = "docLinks.json";
     const removalPolicy =
       props.envConfig.bucketRemovalPolicy === "retain"
         ? cdk.RemovalPolicy.RETAIN
@@ -52,7 +52,7 @@ export class DataProcessingStack extends cdk.Stack {
         environment: {
           BUCKET_NAME: bucket.bucketName,
           PROJECTS_SPACE: s3ProjectsSpace,
-          DOC_LINKS_FILE_PATH: s3ProjectsDocLinks,
+          DOC_LINKS_JSON: s3DocLinks,
         },
         layers: [
           this.createDependenciesLayer(this.stackName, "lambda/lambda-handler"),
@@ -71,10 +71,7 @@ export class DataProcessingStack extends cdk.Stack {
       lambdaFunctionDocuMetadataProcessing,
       `${s3ProjectsSpace}/*.zip`
     );
-    bucket.grantReadWrite(
-      lambdaFunctionDocuMetadataProcessing,
-      s3ProjectsDocLinks
-    );
+    bucket.grantReadWrite(lambdaFunctionDocuMetadataProcessing, s3DocLinks);
 
     new cdk.CfnOutput(this, "UploadCommand", {
       value: `aws s3 cp test-1.0.0.zip s3://${bucket.bucketName}/${s3ProjectsSpace}/test-1.0.0.zip`,
