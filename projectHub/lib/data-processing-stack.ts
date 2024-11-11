@@ -1,6 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import * as s3 from "aws-cdk-lib/aws-s3";
 // import * as iam from "aws-cdk-lib/aws-iam";
+import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as s3_notifications from "aws-cdk-lib/aws-s3-notifications";
 import * as aws_lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
@@ -25,10 +26,9 @@ export class DataProcessingStack extends cdk.Stack {
 
     const bucket = new s3.Bucket(this, "S3StorageBucket", {
       bucketName: props.targetEnvConfig.bucketName,
-      versioned: true,
+      versioned: props.targetEnvConfig.bucketVersioning,
       removalPolicy,
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
-
       // -----------------------------------
       // Uncomment only for tests!
       // -----------------------------------
@@ -43,6 +43,18 @@ export class DataProcessingStack extends cdk.Stack {
     });
     // bucket.grantRead(new iam.AnyPrincipal());
 
+    // Deploy Docusaurus site to S3
+    new s3deploy.BucketDeployment(this, "DeployDocusaurusSite", {
+      sources: [
+        s3deploy.Source.asset(
+          path.join(__dirname, "..", "assets", "web", "build")
+        ),
+      ],
+      destinationBucket: bucket,
+      destinationKeyPrefix: "projectHubWeb/",
+      retainOnDelete: false,
+    });
+
     const lambdaProjectDocsProcessing = new aws_lambda.Function(
       this,
       "LambdaProjectDocsProcessing",
@@ -56,7 +68,10 @@ export class DataProcessingStack extends cdk.Stack {
           DOC_LINKS_JSON: s3DocLinks,
         },
         layers: [
-          this.createDependenciesLayer(this.stackName, "LambdaProjectDocsProcessing"),
+          this.createDependenciesLayer(
+            this.stackName,
+            "LambdaProjectDocsProcessing"
+          ),
         ],
       }
     );

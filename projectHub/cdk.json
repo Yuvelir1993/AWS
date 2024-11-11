@@ -20,11 +20,13 @@
     "environment": {
       "blue": {
         "bucketName": "project-hub-bucket-blue",
-        "bucketRemovalPolicy": "retain"
+        "bucketRemovalPolicy": "retain",
+        "bucketVersioning": true
       },
       "green": {
         "bucketName": "project-hub-bucket-green",
-        "bucketRemovalPolicy": "destroy"
+        "bucketRemovalPolicy": "destroy",
+        "bucketVersioning": false
       }
     },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
