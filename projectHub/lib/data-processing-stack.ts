@@ -58,7 +58,7 @@ export class DataProcessingStack extends cdk.Stack {
           DOC_LINKS_JSON: s3DocLinks,
         },
         layers: [
-          this.createDependenciesLayer(this.stackName, "lambda/lambda-handler"),
+          this.createDependenciesLayer(this.stackName, "LambdaProjectDocsProcessing"),
         ],
       }
     );
@@ -74,13 +74,14 @@ export class DataProcessingStack extends cdk.Stack {
     bucket.grantReadWrite(lambdaProjectDocsProcessing, s3DocLinks);
 
     new cdk.CfnOutput(this, "UploadCommand", {
-      value: `aws s3 cp test-1.0.0.zip s3://${bucket.bucketName}/${s3ProjectsSpace}/test-1.0.0.zip`,
-      description: "Test AWS CLI command to upload the project zip file to S3",
+      value: `aws s3 cp ./assets/web/resources/sample-python/PythonApi-0.1.0.zip s3://${bucket.bucketName}/${s3ProjectsSpace}/PythonApi-0.1.0.zip`,
+      description:
+        "Test AWS CLI command to upload the project's docs zip file to S3",
     });
   }
 
   private createDependenciesLayer(
-    projectName: string,
+    stackName: string,
     functionName: string
   ): aws_lambda.LayerVersion {
     const requirementsFile = path.join(__dirname, "lambda", "requirements.txt");
@@ -95,7 +96,7 @@ export class DataProcessingStack extends cdk.Stack {
       );
     }
 
-    const layerId = `${projectName}-${functionName}-dependencies`;
+    const layerId = `${stackName}-${functionName}-dependencies`;
     const layerCode = aws_lambda.Code.fromAsset(outputDir);
     const myLayer = new aws_lambda.LayerVersion(this, layerId, {
       code: layerCode,
