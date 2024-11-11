@@ -43,8 +43,6 @@ export class DataProcessingStack extends cdk.Stack {
     });
     // bucket.grantRead(new iam.AnyPrincipal());
 
-    // TODO: test if with current set up there is a single Lambda for both blue/green environments
-    const lambdaFunctionName = `ProjectDocsProcessingLambda-${props.targetEnv}`;
     const lambdaProjectDocsProcessing = new aws_lambda.Function(
       this,
       "LambdaProjectDocsProcessing",
