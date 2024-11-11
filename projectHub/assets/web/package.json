@@ -1,11 +1,11 @@
 {
-  "name": "my-website",
+  "name": "project-hub",
   "version": "0.0.0",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "set NODE_ENV=prod && docusaurus start",
-    "start:dev": "set NODE_ENV=dev && docusaurus start",
+    "start:dev": "set NODE_ENV=dev && docusaurus start --port 3002",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
