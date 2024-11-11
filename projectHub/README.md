@@ -6,17 +6,15 @@ Project which will aggregate your project's documentations and will serve as an 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 ## Useful CDK commands
-* `npx cdk bootstrap`                       bootstrap the environment before deployment
-* `npx cdk diff`                            compare deployed stack with current state
-* `npx cdk synth`                           to validate, catch errors and make synthesized CloudFormation template
-* `npx cdk deploy -c targetEnv=blue`        deploy this stack to your production AWS environment
-* `npx cdk deploy -c targetEnv=green`       deploy this stack to your dev AWS environment
-* `npx cdk destroy -c targetEnv=blue`       destroy the whole production AWS environment
-* `npx cdk destroy -c targetEnv=green`      destroy the whole dev AWS environment
+* `npx cdk bootstrap`                               bootstrap the environment before deployment
+* `npx cdk diff`                                    compare deployed stack with current state
+* `npx cdk synth -c targetEnv=(blue/green)`         to validate, catch errors and make synthesized CloudFormation template
+* `npx cdk deploy -c targetEnv=(blue/green)`        deploy this stack to your (blue/green) AWS environment
+* `npx cdk destroy -c targetEnv=(blue/green)`       destroy the whole (blue/green) AWS environment
 
 ## Useful NPM commands
-* `npm install`                             install packages
-* `npm run build`                           compile typescript to js
-* `npm run watch`                           watch for changes and compile
-* `npm run test`                            perform the jest unit tests
-* `npx npm-check-updates`                   update all dependencies in package.json
+* `npm install`                                     install packages
+* `npm run build`                                   compile typescript to js
+* `npm run watch`                                   watch for changes and compile
+* `npm run test`                                    perform the jest unit tests
+* `npx npm-check-updates`                           update all dependencies in package.json
