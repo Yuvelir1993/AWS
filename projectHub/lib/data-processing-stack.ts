@@ -1,9 +1,11 @@
 import * as cdk from "aws-cdk-lib";
 import * as s3 from "aws-cdk-lib/aws-s3";
-// import * as iam from "aws-cdk-lib/aws-iam";
+import * as iam from "aws-cdk-lib/aws-iam";
 import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as s3_notifications from "aws-cdk-lib/aws-s3-notifications";
 import * as aws_lambda from "aws-cdk-lib/aws-lambda";
+import * as aws_cloudfront from "aws-cdk-lib/aws-cloudfront";
+import * as aws_cloudfront_origins from "aws-cdk-lib/aws-cloudfront-origins";
 import { Construct } from "constructs";
 import * as child_process from "child_process";
 import path = require("path");
@@ -18,11 +20,19 @@ export class DataProcessingStack extends cdk.Stack {
     super(scope, id, props);
 
     const s3ProjectsSpace = "projects";
+    const s3ProjectHubWebSpace = "projectHubWeb";
     const s3DocLinks = "docLinks.json";
     const removalPolicy =
       props.targetEnvConfig.bucketRemovalPolicy === "retain"
         ? cdk.RemovalPolicy.RETAIN
         : cdk.RemovalPolicy.DESTROY;
+
+    // const s3CorsRule: s3.CorsRule = {
+    //   allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.HEAD],
+    //   allowedOrigins: ["*"],
+    //   allowedHeaders: ["*"],
+    //   maxAge: 300,
+    // };
 
     const bucket = new s3.Bucket(this, "S3StorageBucket", {
       bucketName: props.targetEnvConfig.bucketName,
@@ -32,16 +42,45 @@ export class DataProcessingStack extends cdk.Stack {
       // -----------------------------------
       // Uncomment only for tests!
       // -----------------------------------
-      // publicReadAccess: true,
+      // publicReadAccess: false,
+      // blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      // accessControl: s3.BucketAccessControl.PRIVATE,
+      // objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
       // blockPublicAccess: {
       //   blockPublicAcls: false,
       //   blockPublicPolicy: false,
       //   ignorePublicAcls: false,
       //   restrictPublicBuckets: false,
       // },
-      // websiteIndexDocument: 'index.html',
+      // websiteIndexDocument: "index.html",
+      // cors: [s3CorsRule],
     });
     // bucket.grantRead(new iam.AnyPrincipal());
+
+    const distribution = new aws_cloudfront.Distribution(
+      this,
+      "DocusaurusDistribution",
+      {
+        defaultBehavior: {
+          origin: new aws_cloudfront_origins.S3Origin(bucket),
+          allowedMethods: aws_cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+          compress: true,
+          viewerProtocolPolicy:
+            aws_cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        },
+        defaultRootObject: `${s3ProjectHubWebSpace}/index.html`,
+        errorResponses: [
+          {
+            httpStatus: 403,
+            responseHttpStatus: 403,
+            responsePagePath: "/error.html",
+            ttl: cdk.Duration.minutes(30),
+          },
+        ],
+        minimumProtocolVersion:
+          aws_cloudfront.SecurityPolicyProtocol.TLS_V1_2_2019,
+      }
+    );
 
     // Deploy Docusaurus site to S3
     new s3deploy.BucketDeployment(this, "DeployDocusaurusSite", {
@@ -51,8 +90,10 @@ export class DataProcessingStack extends cdk.Stack {
         ),
       ],
       destinationBucket: bucket,
-      destinationKeyPrefix: "projectHubWeb/",
-      retainOnDelete: false,
+      destinationKeyPrefix: `${s3ProjectHubWebSpace}/`,
+      // retainOnDelete: false,
+      // distribution,
+      // distributionPaths: ["/*"],
     });
 
     const lambdaProjectDocsProcessing = new aws_lambda.Function(
@@ -90,6 +131,16 @@ export class DataProcessingStack extends cdk.Stack {
       value: `aws s3 cp ./assets/web/resources/sample-python/PythonApi-0.1.0.zip s3://${bucket.bucketName}/${s3ProjectsSpace}/PythonApi-0.1.0.zip`,
       description:
         "Test AWS CLI command to upload the project's docs zip file to S3",
+    });
+
+    new cdk.CfnOutput(this, "CloudFrontURL", {
+      value: `https://${distribution.distributionDomainName}`,
+      description: "The URL of the Docusaurus site via CloudFront",
+    });
+
+    new cdk.CfnOutput(this, "CfnOutDistributionId", {
+      value: distribution.distributionId,
+      description: "CloudFront Distribution Id",
     });
   }
 
