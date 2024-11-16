@@ -47,18 +47,44 @@ export class DataProcessingStack extends cdk.Stack {
         originAccessControl: oac,
       });
 
+    // const cfFunction = new aws_cloudfront.Function(this, "Function", {
+    //   code: aws_cloudfront.FunctionCode.fromFile({
+    //     filePath: path.join(
+    //       __dirname,
+    //       "cloudFront",
+    //       "docusaurusDynamicUrlHandler.js"
+    //     ),
+    //   }),
+    //   runtime: aws_cloudfront.FunctionRuntime.JS_2_0,
+    // });
+
+    const distributionBehaviorCfg = {
+      origin: s3Origin,
+      allowedMethods: aws_cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+      compress: true,
+      viewerProtocolPolicy:
+        aws_cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    };
+
     const distribution = new aws_cloudfront.Distribution(
       this,
       "DocusaurusDistribution",
       {
         defaultBehavior: {
-          origin: s3Origin,
-          allowedMethods: aws_cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
-          compress: true,
-          viewerProtocolPolicy:
-            aws_cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          ...distributionBehaviorCfg,
+          // functionAssociations: [
+          //   {
+          //     function: cfFunction,
+          //     eventType: aws_cloudfront.FunctionEventType.VIEWER_REQUEST,
+          //   },
+          // ],
         },
         defaultRootObject: `${S3_SPACE_PROJECT_HUB_WEB}/index.html`,
+        additionalBehaviors: {
+          "projects/*": {
+            ...distributionBehaviorCfg,
+          },
+        },
         errorResponses: [
           {
             httpStatus: 403,
