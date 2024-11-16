@@ -14,13 +14,14 @@ interface MyStackProps extends cdk.StackProps {
   targetEnvConfig: any;
 }
 
+const S3_SPACE_PROJECTS = "projects";
+const S3_SPACE_PROJECT_HUB_WEB = "projectHubWeb";
+const S3_DOC_LINKS = "docLinks.json";
+
 export class DataProcessingStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: MyStackProps) {
     super(scope, id, props);
 
-    const s3ProjectsSpace = "projects";
-    const s3ProjectHubWebSpace = "projectHubWeb";
-    const s3DocLinks = "docLinks.json";
     const removalPolicy =
       props.targetEnvConfig.bucketRemovalPolicy === "retain"
         ? cdk.RemovalPolicy.RETAIN
@@ -57,7 +58,7 @@ export class DataProcessingStack extends cdk.Stack {
           viewerProtocolPolicy:
             aws_cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         },
-        defaultRootObject: `${s3ProjectHubWebSpace}/index.html`,
+        defaultRootObject: `${S3_SPACE_PROJECT_HUB_WEB}/index.html`,
         errorResponses: [
           {
             httpStatus: 403,
@@ -79,7 +80,7 @@ export class DataProcessingStack extends cdk.Stack {
         ),
       ],
       destinationBucket: bucket,
-      destinationKeyPrefix: `${s3ProjectHubWebSpace}/`,
+      destinationKeyPrefix: `${S3_SPACE_PROJECT_HUB_WEB}/`,
     });
 
     const lambdaProjectDocsProcessing = new aws_lambda.Function(
@@ -91,8 +92,8 @@ export class DataProcessingStack extends cdk.Stack {
         code: aws_lambda.Code.fromAsset(path.join(__dirname, "lambda")),
         environment: {
           BUCKET_NAME: bucket.bucketName,
-          PROJECTS_SPACE: s3ProjectsSpace,
-          DOC_LINKS_JSON: s3DocLinks,
+          PROJECTS_SPACE: S3_SPACE_PROJECTS,
+          DOC_LINKS_JSON: S3_DOC_LINKS,
         },
         layers: [
           this.createDependenciesLayer(
@@ -107,14 +108,14 @@ export class DataProcessingStack extends cdk.Stack {
     );
 
     bucket.addObjectCreatedNotification(lambdaDestination, {
-      prefix: s3ProjectsSpace,
+      prefix: S3_SPACE_PROJECTS,
       suffix: ".zip",
     });
-    bucket.grantRead(lambdaProjectDocsProcessing, `${s3ProjectsSpace}/*.zip`);
-    bucket.grantReadWrite(lambdaProjectDocsProcessing, s3DocLinks);
+    bucket.grantRead(lambdaProjectDocsProcessing, `${S3_SPACE_PROJECTS}/*.zip`);
+    bucket.grantReadWrite(lambdaProjectDocsProcessing, S3_DOC_LINKS);
 
     new cdk.CfnOutput(this, "UploadCommand", {
-      value: `aws s3 cp ./assets/web/resources/sample-python/PythonApi-0.1.0.zip s3://${bucket.bucketName}/${s3ProjectsSpace}/PythonApi-0.1.0.zip`,
+      value: `aws s3 cp ./assets/web/resources/sample-python/PythonApi-0.1.0.zip s3://${bucket.bucketName}/${S3_SPACE_PROJECTS}/PythonApi-0.1.0.zip`,
       description:
         "Test AWS CLI command to upload the project's docs zip file to S3",
     });
