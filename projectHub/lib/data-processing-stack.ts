@@ -31,14 +31,27 @@ export class DataProcessingStack extends cdk.Stack {
       versioned: props.targetEnvConfig.bucketVersioning,
       removalPolicy,
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
+      websiteIndexDocument: "index.html",
     });
+
+    const oac = new aws_cloudfront.S3OriginAccessControl(
+      this,
+      "S3StorageBucketCloudFrontOAC",
+      {
+        signing: aws_cloudfront.Signing.SIGV4_NO_OVERRIDE,
+      }
+    );
+    const s3Origin =
+      aws_cloudfront_origins.S3BucketOrigin.withOriginAccessControl(bucket, {
+        originAccessControl: oac,
+      });
 
     const distribution = new aws_cloudfront.Distribution(
       this,
       "DocusaurusDistribution",
       {
         defaultBehavior: {
-          origin: new aws_cloudfront_origins.S3Origin(bucket),
+          origin: s3Origin,
           allowedMethods: aws_cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
           compress: true,
           viewerProtocolPolicy:
