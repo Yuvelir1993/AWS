@@ -1,6 +1,5 @@
 import * as cdk from "aws-cdk-lib";
 import * as s3 from "aws-cdk-lib/aws-s3";
-import * as iam from "aws-cdk-lib/aws-iam";
 import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as s3_notifications from "aws-cdk-lib/aws-s3-notifications";
 import * as aws_lambda from "aws-cdk-lib/aws-lambda";
@@ -27,35 +26,12 @@ export class DataProcessingStack extends cdk.Stack {
         ? cdk.RemovalPolicy.RETAIN
         : cdk.RemovalPolicy.DESTROY;
 
-    // const s3CorsRule: s3.CorsRule = {
-    //   allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.HEAD],
-    //   allowedOrigins: ["*"],
-    //   allowedHeaders: ["*"],
-    //   maxAge: 300,
-    // };
-
     const bucket = new s3.Bucket(this, "S3StorageBucket", {
       bucketName: props.targetEnvConfig.bucketName,
       versioned: props.targetEnvConfig.bucketVersioning,
       removalPolicy,
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
-      // -----------------------------------
-      // Uncomment only for tests!
-      // -----------------------------------
-      // publicReadAccess: false,
-      // blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      // accessControl: s3.BucketAccessControl.PRIVATE,
-      // objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
-      // blockPublicAccess: {
-      //   blockPublicAcls: false,
-      //   blockPublicPolicy: false,
-      //   ignorePublicAcls: false,
-      //   restrictPublicBuckets: false,
-      // },
-      // websiteIndexDocument: "index.html",
-      // cors: [s3CorsRule],
     });
-    // bucket.grantRead(new iam.AnyPrincipal());
 
     const distribution = new aws_cloudfront.Distribution(
       this,
@@ -91,9 +67,6 @@ export class DataProcessingStack extends cdk.Stack {
       ],
       destinationBucket: bucket,
       destinationKeyPrefix: `${s3ProjectHubWebSpace}/`,
-      // retainOnDelete: false,
-      // distribution,
-      // distributionPaths: ["/*"],
     });
 
     const lambdaProjectDocsProcessing = new aws_lambda.Function(
