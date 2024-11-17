@@ -40,6 +40,7 @@ export class DataProcessingStack extends cdk.Stack {
       "S3StorageBucketCloudFrontOAC",
       {
         signing: aws_cloudfront.Signing.SIGV4_NO_OVERRIDE,
+        description: "OAC to allow Cloudfront access to S3",
       }
     );
     const s3Origin =
@@ -49,13 +50,10 @@ export class DataProcessingStack extends cdk.Stack {
 
     // const cfFunction = new aws_cloudfront.Function(this, "Function", {
     //   code: aws_cloudfront.FunctionCode.fromFile({
-    //     filePath: path.join(
-    //       __dirname,
-    //       "cloudFront",
-    //       "docusaurusDynamicUrlHandler.js"
-    //     ),
+    //     filePath: path.join(__dirname, "cloudFront", "docusaurusUriHandler.js"),
     //   }),
     //   runtime: aws_cloudfront.FunctionRuntime.JS_2_0,
+    //   autoPublish: true,
     // });
 
     const distributionBehaviorCfg = {
