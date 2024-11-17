@@ -4,6 +4,7 @@
 *.d.ts
 node_modules
 .build/**
+*.pem
 
 # CDK asset staging directory
 .cdk.staging
