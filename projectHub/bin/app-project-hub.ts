@@ -2,6 +2,7 @@
 import "source-map-support/register";
 import * as cdk from "aws-cdk-lib";
 import { DataProcessingStack } from "../lib/data-processing-stack";
+import { EC2InstanceStack } from "../lib/ec2-stack";
 
 const app = new cdk.App();
 const targetEnv = app.node.tryGetContext("targetEnv");
@@ -18,6 +19,11 @@ if (!targetEnvConfig) {
 }
 
 new DataProcessingStack(app, `ProjectHubStack-${targetEnv}`, {
+  targetEnv,
+  targetEnvConfig,
+});
+
+new EC2InstanceStack(app, "ProjectHubEC2Stack", {
   targetEnv,
   targetEnvConfig,
 });
