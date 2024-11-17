@@ -3,8 +3,6 @@ import * as s3 from "aws-cdk-lib/aws-s3";
 import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as s3_notifications from "aws-cdk-lib/aws-s3-notifications";
 import * as aws_lambda from "aws-cdk-lib/aws-lambda";
-import * as aws_cloudfront from "aws-cdk-lib/aws-cloudfront";
-import * as aws_cloudfront_origins from "aws-cdk-lib/aws-cloudfront-origins";
 import { Construct } from "constructs";
 import * as child_process from "child_process";
 import path = require("path");
@@ -34,67 +32,6 @@ export class DataProcessingStack extends cdk.Stack {
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
       websiteIndexDocument: "index.html",
     });
-
-    const oac = new aws_cloudfront.S3OriginAccessControl(
-      this,
-      "S3StorageBucketCloudFrontOAC",
-      {
-        signing: aws_cloudfront.Signing.SIGV4_NO_OVERRIDE,
-        description: "OAC to allow Cloudfront access to S3",
-      }
-    );
-    const s3Origin =
-      aws_cloudfront_origins.S3BucketOrigin.withOriginAccessControl(bucket, {
-        originAccessControl: oac,
-      });
-
-    // const cfFunction = new aws_cloudfront.Function(this, "Function", {
-    //   code: aws_cloudfront.FunctionCode.fromFile({
-    //     filePath: path.join(__dirname, "cloudFront", "docusaurusUriHandler.js"),
-    //   }),
-    //   runtime: aws_cloudfront.FunctionRuntime.JS_2_0,
-    //   autoPublish: true,
-    // });
-
-    const distributionBehaviorCfg = {
-      origin: s3Origin,
-      allowedMethods: aws_cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
-      compress: true,
-      viewerProtocolPolicy:
-        aws_cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-    };
-
-    const distribution = new aws_cloudfront.Distribution(
-      this,
-      "DocusaurusDistribution",
-      {
-        defaultBehavior: {
-          ...distributionBehaviorCfg,
-          // functionAssociations: [
-          //   {
-          //     function: cfFunction,
-          //     eventType: aws_cloudfront.FunctionEventType.VIEWER_REQUEST,
-          //   },
-          // ],
-        },
-        defaultRootObject: `${S3_SPACE_PROJECT_HUB_WEB}/index.html`,
-        additionalBehaviors: {
-          "projects/*": {
-            ...distributionBehaviorCfg,
-          },
-        },
-        errorResponses: [
-          {
-            httpStatus: 403,
-            responseHttpStatus: 403,
-            responsePagePath: "/error.html",
-            ttl: cdk.Duration.minutes(30),
-          },
-        ],
-        minimumProtocolVersion:
-          aws_cloudfront.SecurityPolicyProtocol.TLS_V1_2_2019,
-      }
-    );
 
     // Deploy Docusaurus site to S3
     new s3deploy.BucketDeployment(this, "DeployDocusaurusSite", {
@@ -142,16 +79,6 @@ export class DataProcessingStack extends cdk.Stack {
       value: `aws s3 cp ./assets/web/resources/sample-python/PythonApi-0.1.0.zip s3://${bucket.bucketName}/${S3_SPACE_PROJECTS}/PythonApi-0.1.0.zip`,
       description:
         "Test AWS CLI command to upload the project's docs zip file to S3",
-    });
-
-    new cdk.CfnOutput(this, "CloudFrontURL", {
-      value: `https://${distribution.distributionDomainName}`,
-      description: "The URL of the Docusaurus site via CloudFront",
-    });
-
-    new cdk.CfnOutput(this, "CfnOutDistributionId", {
-      value: distribution.distributionId,
-      description: "CloudFront Distribution Id",
     });
   }
 
