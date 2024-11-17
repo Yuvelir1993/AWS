@@ -37,11 +37,12 @@ export class DataProcessingStack extends cdk.Stack {
     new s3deploy.BucketDeployment(this, "DeployDocusaurusSite", {
       sources: [
         s3deploy.Source.asset(
-          path.join(__dirname, "..", "assets", "web", "build")
+          path.join(__dirname, "..", "assets", "web", "build.zip")
         ),
       ],
       destinationBucket: bucket,
       destinationKeyPrefix: `${S3_SPACE_PROJECT_HUB_WEB}/`,
+      extract: false,
     });
 
     const lambdaProjectDocsProcessing = new aws_lambda.Function(
