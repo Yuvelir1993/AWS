@@ -19,6 +19,3 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `npm run watch`                                   watch for changes and compile
 * `npm run test`                                    perform the jest unit tests
 * `npx npm-check-updates`                           update all dependencies in package.json
-
-## Useful AWS CLI commands
-* `aws cloudfront create-invalidation --distribution-id <CF_DISTRIBUTION_ID> --paths '/*'`   invalidate CloudFront to quickly see changes
