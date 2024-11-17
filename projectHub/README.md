@@ -6,7 +6,7 @@ Project which will aggregate your project's documentations and will serve as an 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 ## Useful CDK commands
-* `npx cdk ls)`                                     list all stacks to be able deploy only one of them
+* `npx cdk ls`                                      list all stacks to be able deploy only one of them
 * `npx cdk bootstrap -c targetEnv=(blue/green)`     bootstrap the environment before deployment
 * `npx cdk diff -c targetEnv=(blue/green)`          compare deployed stack with current state
 * `npx cdk synth -c targetEnv=(blue/green)`         to validate, catch errors and make synthesized CloudFormation template
