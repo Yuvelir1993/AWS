@@ -1,15 +1,16 @@
 import * as cdk from "aws-cdk-lib";
 import * as s3 from "aws-cdk-lib/aws-s3";
-import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as s3_notifications from "aws-cdk-lib/aws-s3-notifications";
 import * as aws_lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import * as child_process from "child_process";
+import * as iam from "aws-cdk-lib/aws-iam";
 import path = require("path");
 
 interface MyStackProps extends cdk.StackProps {
   targetEnv: String;
   targetEnvConfig: any;
+  ec2InstanceRole: iam.IRole;
 }
 
 const S3_SPACE_PROJECTS = "projects";
@@ -32,18 +33,13 @@ export class DataProcessingStack extends cdk.Stack {
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
       websiteIndexDocument: "index.html",
     });
-
-    // Deploy Docusaurus site to S3
-    new s3deploy.BucketDeployment(this, "DeployDocusaurusSite", {
-      sources: [
-        s3deploy.Source.asset(
-          path.join(__dirname, "..", "assets", "web", "build.zip")
-        ),
-      ],
-      destinationBucket: bucket,
-      destinationKeyPrefix: `${S3_SPACE_PROJECT_HUB_WEB}/`,
-      extract: false,
-    });
+    bucket.addToResourcePolicy(
+      new iam.PolicyStatement({
+        actions: ["s3:GetObject"],
+        resources: [`${bucket.bucketArn}/${S3_SPACE_PROJECT_HUB_WEB}/*`],
+        principals: [props.ec2InstanceRole],
+      })
+    );
 
     const lambdaProjectDocsProcessing = new aws_lambda.Function(
       this,
