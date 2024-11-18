@@ -5,13 +5,8 @@ import * as aws_lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import * as child_process from "child_process";
 import * as iam from "aws-cdk-lib/aws-iam";
+import { MyStackProps } from "./data-model";
 import path = require("path");
-
-interface MyStackProps extends cdk.StackProps {
-  targetEnv: String;
-  targetEnvConfig: any;
-  ec2InstanceRole: iam.IRole;
-}
 
 const S3_SPACE_PROJECTS = "projects";
 const S3_SPACE_PROJECT_HUB_WEB = "projectHubWeb";
@@ -37,7 +32,7 @@ export class DataProcessingStack extends cdk.Stack {
       new iam.PolicyStatement({
         actions: ["s3:GetObject"],
         resources: [`${bucket.bucketArn}/${S3_SPACE_PROJECT_HUB_WEB}/*`],
-        principals: [props.ec2InstanceRole],
+        principals: [props.ec2InstanceRole!],
       })
     );
 

@@ -1,14 +1,8 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
-import * as iam from "aws-cdk-lib/aws-iam";
 import * as fs from "fs";
-
-interface MyStackProps extends cdk.StackProps {
-  targetEnv: String;
-  targetEnvConfig: any;
-  ec2InstanceRole: iam.IRole;
-}
+import { MyStackProps } from "./data-model";
 
 const S3_SPACE_PROJECT_HUB_WEB = "projectHubWeb";
 
@@ -29,7 +23,7 @@ export class EC2InstanceStack extends cdk.Stack {
 
     const securityGroup = new ec2.SecurityGroup(this, "SecurityGroup", {
       vpc,
-      description: "Allow ssh access to EC2 instances.",
+      description: "Allow access to EC2 instances.",
       allowAllOutbound: true,
     });
 
@@ -60,7 +54,7 @@ export class EC2InstanceStack extends cdk.Stack {
       vpc,
       keyPair: keyPair,
       securityGroup,
-      role: props.ec2InstanceRole,
+      role: props.ec2InstanceRole!,
     });
 
     const userDataParams = `

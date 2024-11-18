@@ -25,20 +25,27 @@ import {
     );
   }
 
+  const tags = { project: "ProjectHub", env: targetEnv };
+
   const securityStack = new SecurityStack(app, `SecurityStack-${targetEnv}`, {
     targetEnv,
+    targetEnvConfig,
+    ec2InstanceRole: null,
+    tags,
   });
 
-  new DataProcessingStack(app, `ProjectHubStack-${targetEnv}`, {
+  new DataProcessingStack(app, `ProjectHubDataProcessingStack-${targetEnv}`, {
     targetEnv,
     targetEnvConfig,
     ec2InstanceRole: securityStack.ec2InstanceRole,
+    tags,
   });
 
-  new EC2InstanceStack(app, `ProjectHubEC2Stack-${targetEnv}`, {
+  new EC2InstanceStack(app, `ProjectHubEC2InstanceStack-${targetEnv}`, {
     targetEnv,
     targetEnvConfig,
     ec2InstanceRole: securityStack.ec2InstanceRole,
+    tags,
   });
 
   // https://aws.github.io/aws-pdk/developer_guides/cdk-graph-plugin-diagram/index.html

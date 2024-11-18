@@ -1,10 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
-
-interface MyStackProps extends cdk.StackProps {
-  targetEnv: String;
-}
+import { MyStackProps } from "./data-model";
 
 export class IamRoleStack extends cdk.Stack {
   public readonly ec2InstanceRole: iam.IRole;
