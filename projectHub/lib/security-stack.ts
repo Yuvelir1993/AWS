@@ -23,7 +23,7 @@ export class SecurityStack extends cdk.Stack {
     this.ec2InstanceRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: ["s3:GetObject"],
+        actions: ["s3:*"],
         resources: [s3BucketObjectsArn],
       })
     );
