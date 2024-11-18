@@ -4,7 +4,7 @@ import { Construct } from "constructs";
 import { MyStackProps } from "./data-model";
 import { Commons } from "./commons";
 
-export class IamRoleStack extends cdk.Stack {
+export class SecurityStack extends cdk.Stack {
   public readonly ec2InstanceRole: iam.IRole;
 
   constructor(scope: Construct, id: string, props: MyStackProps) {

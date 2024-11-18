@@ -3,7 +3,7 @@ import "source-map-support/register";
 import * as cdk from "aws-cdk-lib";
 import { DataProcessingStack } from "../lib/data-processing-stack";
 import { EC2InstanceStack } from "../lib/ec2-stack";
-import { IamRoleStack as SecurityStack } from "../lib/security-stack";
+import { SecurityStack } from "../lib/security-stack";
 import { CdkGraph, FilterPreset } from "@aws/pdk/cdk-graph";
 import {
   CdkGraphDiagramPlugin,
