@@ -3,8 +3,7 @@ import { Construct } from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as fs from "fs";
 import { MyStackProps } from "./data-model";
-
-const S3_SPACE_PROJECT_HUB_WEB = "projectHubWeb";
+import { Commons } from "./commons";
 
 export class EC2InstanceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: MyStackProps) {
@@ -58,7 +57,7 @@ export class EC2InstanceStack extends cdk.Stack {
     });
 
     const userDataParams = `
-    export PROJECT_HUB_WEB_S3_ZIP_PATH=${props.targetEnvConfig.bucketName}/${S3_SPACE_PROJECT_HUB_WEB}/projectHubWeb.zip
+    export PROJECT_HUB_WEB_S3_ZIP_PATH=${props.targetEnvConfig.bucketName}/${Commons.S3_SPACE_PROJECT_HUB_WEB}/projectHubWeb.zip
     `;
     const userDataScript = fs.readFileSync(
       "lib/scripts/ec2-website-deploy.sh",

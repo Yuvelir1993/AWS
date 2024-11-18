@@ -7,10 +7,7 @@ import * as child_process from "child_process";
 import * as iam from "aws-cdk-lib/aws-iam";
 import { MyStackProps } from "./data-model";
 import path = require("path");
-
-const S3_SPACE_PROJECTS = "projects";
-const S3_SPACE_PROJECT_HUB_WEB = "projectHubWeb";
-const S3_DOC_LINKS = "docLinks.json";
+import { Commons } from "./commons";
 
 export class DataProcessingStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: MyStackProps) {
@@ -31,7 +28,9 @@ export class DataProcessingStack extends cdk.Stack {
     bucket.addToResourcePolicy(
       new iam.PolicyStatement({
         actions: ["s3:GetObject"],
-        resources: [`${bucket.bucketArn}/${S3_SPACE_PROJECT_HUB_WEB}/*`],
+        resources: [
+          `${bucket.bucketArn}/${Commons.S3_SPACE_PROJECT_HUB_WEB}/*`,
+        ],
         principals: [props.ec2InstanceRole!],
       })
     );
@@ -45,8 +44,8 @@ export class DataProcessingStack extends cdk.Stack {
         code: aws_lambda.Code.fromAsset(path.join(__dirname, "lambda")),
         environment: {
           BUCKET_NAME: bucket.bucketName,
-          PROJECTS_SPACE: S3_SPACE_PROJECTS,
-          DOC_LINKS_JSON: S3_DOC_LINKS,
+          PROJECTS_SPACE: Commons.S3_SPACE_PROJECTS,
+          DOC_LINKS_JSON: Commons.S3_DOC_LINKS,
         },
         layers: [
           this.createDependenciesLayer(
@@ -61,14 +60,17 @@ export class DataProcessingStack extends cdk.Stack {
     );
 
     bucket.addObjectCreatedNotification(lambdaDestination, {
-      prefix: S3_SPACE_PROJECTS,
+      prefix: Commons.S3_SPACE_PROJECTS,
       suffix: ".zip",
     });
-    bucket.grantRead(lambdaProjectDocsProcessing, `${S3_SPACE_PROJECTS}/*.zip`);
-    bucket.grantReadWrite(lambdaProjectDocsProcessing, S3_DOC_LINKS);
+    bucket.grantRead(
+      lambdaProjectDocsProcessing,
+      `${Commons.S3_SPACE_PROJECTS}/*.zip`
+    );
+    bucket.grantReadWrite(lambdaProjectDocsProcessing, Commons.S3_DOC_LINKS);
 
     new cdk.CfnOutput(this, "UploadCommand", {
-      value: `aws s3 cp ./assets/web/resources/sample-python/PythonApi-0.1.0.zip s3://${bucket.bucketName}/${S3_SPACE_PROJECTS}/PythonApi-0.1.0.zip`,
+      value: `aws s3 cp ./assets/web/resources/sample-python/PythonApi-0.1.0.zip s3://${bucket.bucketName}/${Commons.S3_SPACE_PROJECTS}/PythonApi-0.1.0.zip`,
       description:
         "Test AWS CLI command to upload the project's docs zip file to S3",
     });
