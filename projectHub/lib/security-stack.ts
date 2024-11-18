@@ -18,8 +18,7 @@ export class IamRoleStack extends cdk.Stack {
       }
     );
 
-    const s3BucketArn = `arn:aws:s3:::${props.targetEnvConfig.bucketName}`;
-    const s3BucketObjectsArn = `${s3BucketArn}/${Commons.S3_SPACE_PROJECT_HUB_WEB}/*`;
+    const s3BucketObjectsArn = `arn:aws:s3:::${props.targetEnvConfig.bucketName}/${Commons.S3_SPACE_PROJECT_HUB_WEB}/*`;
 
     this.ec2InstanceRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
