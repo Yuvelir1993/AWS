@@ -27,14 +27,21 @@ import {
 
   const tags = { project: "ProjectHub", env: targetEnv };
 
-  const securityStack = new SecurityStack(app, `SecurityStack-${targetEnv}`, {
-    targetEnv,
-    targetEnvConfig,
-    ec2InstanceRole: null,
-    tags,
-  });
+  const securityStack = new SecurityStack(
+    app,
+    `ProjectHubSecurityStack-${targetEnv}`,
+    {
+      description:
+        "Stack for security-related resources to be used in other stacks.",
+      targetEnv,
+      targetEnvConfig,
+      ec2InstanceRole: null,
+      tags,
+    }
+  );
 
   new DataProcessingStack(app, `ProjectHubDataProcessingStack-${targetEnv}`, {
+    description: "S3, Lambdas and other resources related to the data layer.",
     targetEnv,
     targetEnvConfig,
     ec2InstanceRole: securityStack.ec2InstanceRole,
@@ -42,6 +49,7 @@ import {
   });
 
   new EC2InstanceStack(app, `ProjectHubEC2InstanceStack-${targetEnv}`, {
+    description: "EC2 stack for the Web app itself.",
     targetEnv,
     targetEnvConfig,
     ec2InstanceRole: securityStack.ec2InstanceRole,
