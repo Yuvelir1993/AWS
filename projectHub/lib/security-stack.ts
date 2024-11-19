@@ -14,7 +14,7 @@ export class SecurityStack extends cdk.Stack {
       `EC2InstanceRole-${props.targetEnv}`,
       {
         assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
-        description: "Given to EC2 to be used for downloading objects from S3.",
+        description: `Given to EC2 in '${props.targetEnv}' environment to be used for downloading objects from S3.`,
       }
     );
   }
