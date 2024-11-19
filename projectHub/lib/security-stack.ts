@@ -2,7 +2,6 @@ import * as cdk from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
 import { MyStackProps } from "./data-model";
-import { Commons } from "./commons";
 
 export class SecurityStack extends cdk.Stack {
   public readonly ec2InstanceRole: iam.IRole;
@@ -16,16 +15,6 @@ export class SecurityStack extends cdk.Stack {
       {
         assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
       }
-    );
-
-    const s3BucketObjectsArn = `arn:aws:s3:::${props.targetEnvConfig.bucketName}/${Commons.S3_SPACE_PROJECT_HUB_WEB}/*`;
-
-    this.ec2InstanceRole.addToPrincipalPolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: ["s3:*"],
-        resources: [s3BucketObjectsArn],
-      })
     );
   }
 }

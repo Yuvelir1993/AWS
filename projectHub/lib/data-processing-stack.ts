@@ -4,7 +4,6 @@ import * as s3_notifications from "aws-cdk-lib/aws-s3-notifications";
 import * as aws_lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import * as child_process from "child_process";
-import * as iam from "aws-cdk-lib/aws-iam";
 import { MyStackProps } from "./data-model";
 import path = require("path");
 import { Commons } from "./commons";
@@ -25,15 +24,8 @@ export class DataProcessingStack extends cdk.Stack {
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
       websiteIndexDocument: "index.html",
     });
-    bucket.addToResourcePolicy(
-      new iam.PolicyStatement({
-        actions: ["s3:GetObject"],
-        resources: [
-          `${bucket.bucketArn}/${Commons.S3_SPACE_PROJECT_HUB_WEB}/*`,
-        ],
-        principals: [props.ec2InstanceRole!],
-      })
-    );
+
+    bucket.grantRead(props.ec2InstanceRole!);
 
     const lambdaProjectDocsProcessing = new aws_lambda.Function(
       this,
