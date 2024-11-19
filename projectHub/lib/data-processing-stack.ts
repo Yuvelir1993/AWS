@@ -25,7 +25,10 @@ export class DataProcessingStack extends cdk.Stack {
       websiteIndexDocument: "index.html",
     });
 
-    bucket.grantRead(props.ec2InstanceRole!);
+    bucket.grantRead(
+      props.ec2InstanceRole!,
+      `${Commons.S3_SPACE_PROJECT_HUB_WEB}/*`
+    );
 
     const lambdaProjectDocsProcessing = new aws_lambda.Function(
       this,
