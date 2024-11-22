@@ -89,10 +89,21 @@ export default Projects;
 async function getDocLinksData() {
   if (process.env.NODE_ENV && process.env.NODE_ENV.indexOf("dev") > -1) {
     console.log("Using mock data for development");
-    return mockDocLinks; // Return mock data
+    return mockDocLinks;
   } else {
-    const jsonUrl = "https://your-cloudfront-url/docLinks.json";
-    const response = await fetch(jsonUrl);
+    // cons of such approach:
+    //  -  may expose sensitive data to user (like S3 links - allows to make DDOS attack)
+    const config = await fetch("/config.js");
+    const script = await config.text();
+
+    // Parse the `config.js` file to extract `DOC_LINKS_URL`
+    const docLinksUrl = new Function(
+      script + " return window.PROJECT_HUB_DOC_LINKS_URL;"
+    )();
+    const response = await fetch(docLinksUrl);
+
+    console.log(`Fetched docLinks.json url: ${response}`);
+
     if (!response.ok) {
       throw new Error("Failed to fetch doc links");
     }

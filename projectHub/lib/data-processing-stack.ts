@@ -24,10 +24,19 @@ export class DataProcessingStack extends cdk.Stack {
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
     });
 
+    // TODO: check if 'props.ec2Instance' can be used instead - this would allow to remove the whole security stack
     bucket.grantRead(
       props.ec2InstanceRole!,
       `${Commons.S3_SPACE_PROJECT_HUB_WEB}/*`
     );
+    const grantReadProjects = bucket.grantRead(
+      props.ec2InstanceRole!,
+      `${Commons.S3_SPACE_PROJECTS}/*`
+    );
+
+    grantReadProjects.resourceStatement?.addCondition("IpAddress", {
+      "aws:SourceIp": `${props.ec2Instance?.instancePublicIp}/32`,
+    });
 
     const lambdaProjectDocsProcessing = new aws_lambda.Function(
       this,

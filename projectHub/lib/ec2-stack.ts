@@ -6,6 +6,8 @@ import { MyStackProps } from "./data-model";
 import { Commons } from "./commons";
 
 export class EC2InstanceStack extends cdk.Stack {
+  public readonly ec2Instance: ec2.Instance;
+
   constructor(scope: Construct, id: string, props: MyStackProps) {
     super(scope, id, props);
 
@@ -58,6 +60,7 @@ export class EC2InstanceStack extends cdk.Stack {
 
     const userDataParams = `
     export PROJECT_HUB_WEB_S3_ZIP_PATH=${props.targetEnvConfig.bucketName}/${Commons.S3_SPACE_PROJECT_HUB_WEB}/projectHubWeb.zip
+    export PROJECT_HUB_DOC_LINKS_URL=${props.targetEnvConfig.bucketName}/${Commons.S3_DOC_LINKS}
     `;
     const userDataScript = fs.readFileSync(
       "lib/scripts/ec2-website-deploy.sh",
