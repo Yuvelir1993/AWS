@@ -11,7 +11,7 @@ const mockDocLinks: DocLink[] = [
     name: "PythonApp",
     version: "1.0.0",
     url: "http://s3/docs/index.html",
-    readmeUrl: "https://your-cloudfront-url/PythonApp-1.0.0/README.md",
+    readmeUrl: "https://url/PythonApp-1.0.0/README.md",
     readmeMockData: `
   # PythonApp
   
@@ -53,7 +53,7 @@ const mockDocLinks: DocLink[] = [
     name: "PythonApp",
     version: "1.1.0",
     url: "http://s3/docs/index.html",
-    readmeUrl: "https://your-cloudfront-url/PythonApp-1.0.0/README.md",
+    readmeUrl: "https://url/PythonApp-1.0.0/README.md",
     readmeMockData: `
   # PythonApp
   
@@ -95,7 +95,7 @@ const mockDocLinks: DocLink[] = [
     name: "PythonApp",
     version: "2.0.0",
     url: "http://s3/docs/index.html",
-    readmeUrl: "https://your-cloudfront-url/PythonApp-1.0.0/README.md",
+    readmeUrl: "https://url/PythonApp-1.0.0/README.md",
     readmeMockData: `
   # PythonApp
   
@@ -137,7 +137,7 @@ const mockDocLinks: DocLink[] = [
     name: "GolangApp",
     version: "1.0.0",
     url: "http://s3/docs/index.html",
-    readmeUrl: "https://your-cloudfront-url/GolangApp-2.0.0/README.md",
+    readmeUrl: "https://url/GolangApp-2.0.0/README.md",
     readmeMockData: `
   # GolangApp
   
@@ -184,7 +184,7 @@ const mockDocLinks: DocLink[] = [
     name: "JavaApp",
     version: "1.1.0",
     url: "http://s3/docs/index.html",
-    readmeUrl: "https://your-cloudfront-url/JavaApp-1.1.0/README.md",
+    readmeUrl: "https://url/JavaApp-1.1.0/README.md",
     readmeMockData: `
   # JavaApp
   
@@ -229,7 +229,7 @@ const mockDocLinks: DocLink[] = [
     name: "TsApp",
     version: "5.0.0",
     url: "http://s3/docs/index.html",
-    readmeUrl: "https://your-cloudfront-url/TsApp-5.0.0/README.md",
+    readmeUrl: "https://url/TsApp-5.0.0/README.md",
     readmeMockData: `
   # TsApp
   
