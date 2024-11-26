@@ -25,8 +25,22 @@ export class Ec2SshStack extends cdk.Stack {
     mySecurityGroup.addIngressRule(
       // Can I retrieve here my ip?
       ec2.Peer.anyIpv4(),
-      ec2.Port.tcp(22),
+      ec2.Port.SSH,
       "Allow SSH access from the world"
+    );
+
+    mySecurityGroup.addIngressRule(
+      // Can I retrieve here my ip?
+      ec2.Peer.anyIpv4(),
+      ec2.Port.HTTP,
+      "Allow HTTP access from the world"
+    );
+
+    mySecurityGroup.addIngressRule(
+      // Can I retrieve here my ip?
+      ec2.Peer.anyIpv4(),
+      ec2.Port.HTTPS,
+      "Allow HTTPS access from the world"
     );
 
     const keyPair = new ec2.KeyPair(this, "KeyPair", {
