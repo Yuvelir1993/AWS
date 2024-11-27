@@ -47,24 +47,14 @@ export class EC2InstanceStack extends cdk.Stack {
         ec2.InstanceClass.T2,
         ec2.InstanceSize.MICRO
       ),
-      machineImage: new ec2.AmazonLinuxImage({
-        generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
+      machineImage: ec2.MachineImage.genericLinux({
+        "eu-central-1": "ami-066902f7df67250f8", // Ubuntu Jammy 22.04 AMI
       }),
       vpc,
       keyPair: keyPair,
       securityGroup,
       role: props.ec2InstanceRole!,
     });
-
-    const userDataParams = `
-    export PROJECT_HUB_WEB_S3_ZIP_PATH=${props.targetEnvConfig.bucketName}/${Commons.S3_SPACE_PROJECT_HUB_WEB}/projectHubWeb.zip
-    `;
-    const userDataScript = fs.readFileSync(
-      "lib/scripts/ec2-website-deploy.sh",
-      "utf8"
-    );
-
-    instance.addUserData(userDataParams + userDataScript);
 
     new cdk.CfnOutput(this, "EC2InstancePublicIp", {
       value: instance.instancePublicIp,

@@ -22,6 +22,7 @@ export class DataProcessingStack extends cdk.Stack {
       versioned: props.targetEnvConfig.bucketVersioning,
       removalPolicy,
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
+      // websiteIndexDocument: 'index.html'
     });
 
     bucket.grantRead(
