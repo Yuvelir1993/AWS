@@ -34,6 +34,7 @@ export class DataProcessingStack extends cdk.Stack {
       this,
       "LambdaProjectDocsProcessing",
       {
+        description: `Lambda function to react on uploading objects and doing necessary actions like unzipping archives and generating 'docLinks.json'.`,
         runtime: aws_lambda.Runtime.PYTHON_3_13,
         handler: "lambda-handler.generate_doc_links_on_upload",
         code: aws_lambda.Code.fromAsset(path.join(__dirname, "lambda")),
