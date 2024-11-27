@@ -34,7 +34,7 @@ export class DataProcessingStack extends cdk.Stack {
       this,
       "LambdaProjectDocsProcessing",
       {
-        runtime: aws_lambda.Runtime.PYTHON_3_12,
+        runtime: aws_lambda.Runtime.PYTHON_3_13,
         handler: "lambda-handler.generate_doc_links_on_upload",
         code: aws_lambda.Code.fromAsset(path.join(__dirname, "lambda")),
         environment: {
@@ -58,10 +58,11 @@ export class DataProcessingStack extends cdk.Stack {
       prefix: Commons.S3_SPACE_PROJECTS,
       suffix: ".zip",
     });
-    bucket.grantReadWrite(
+    bucket.grantRead(
       lambdaProjectDocsProcessing,
-      Commons.S3_SPACE_PROJECTS
+      `${Commons.S3_SPACE_PROJECTS}/*.zip`
     );
+    bucket.grantWrite(lambdaProjectDocsProcessing, Commons.S3_SPACE_PROJECTS);
     bucket.grantReadWrite(lambdaProjectDocsProcessing, Commons.S3_DOC_LINKS);
 
     new cdk.CfnOutput(this, "UploadCommand", {
