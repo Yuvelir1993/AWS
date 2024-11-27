@@ -1,7 +1,10 @@
 import os
 import re
 import json
+import tempfile
 import urllib.parse
+import zipfile
+from pathlib import Path
 import boto3
 
 print('Loading function...')
@@ -49,44 +52,84 @@ def generate_doc_links_on_upload(event, context):
         }
 
     project_name, project_version = match.groups()
-    print(f"Extracted Project Name: {project_name}, Version: {project_version}")
+    print(f"Extracted Project Name: {
+          project_name}, Version: {project_version}")
 
     try:
-        s3_index_html_url = f"https://{bucket}.s3.amazonaws.com/{projects_space}/{
-            uploaded_object_key.replace('.zip', '/index.html')}"
-        s3_readme_url = f"https://{bucket}.s3.amazonaws.com/{projects_space}/{
-            uploaded_object_key.replace('.zip', '/index.html')}"
-
-        new_doc_links_entry = {
-            "name": project_name,
-            "version": project_version,
-            "urlIndexHtml": s3_index_html_url,
-            "urlReadme": s3_readme_url
-        }
-
-        doc_links = []
-
-        try:
-            metadata_response = s3.get_object(
-                Bucket=bucket, Key=doc_links_json)
-            metadata_content = metadata_response['Body'].read().decode('utf-8')
-            doc_links = json.loads(metadata_content)
-            print(f"Existing {doc_links_json} loaded. Version: {
-                  metadata_response.get('VersionId', 'N/A')}")
-        except s3.exceptions.NoSuchKey:
-            print(f"{doc_links_json} does not exist.")
-
-        doc_links.append(new_doc_links_entry)
-
-        s3.put_object(
-            Bucket=bucket,
-            Key=doc_links_json,
-            Body=json.dumps(doc_links, indent=2),
-            ContentType='application/json'
-        )
-        print(f"{doc_links_json} updated successfully.")
+        generate_doc_links(doc_links_json, projects_space, bucket,
+                           uploaded_object_key, project_name, project_version)
+        unzip(bucket, uploaded_object_key, projects_space)
 
     except Exception as e:
         print(f"Error processing {uploaded_object_key} from bucket {
               bucket}. Exception: {e}")
         raise e
+
+
+def unzip(bucket, uploaded_object_key, projects_space):
+    """
+    Unzipping the uploaded project and uploading its contents to the `projects_space` in the S3 bucket.
+    """
+    try:
+        temp_dir = Path(tempfile.gettempdir())
+        local_zip_path = temp_dir / Path(uploaded_object_key).name
+        s3.download_file(bucket, uploaded_object_key, str(local_zip_path))
+        print(f"Downloaded {uploaded_object_key} to {local_zip_path}")
+
+        with tempfile.TemporaryDirectory() as temp_extract_dir:
+            temp_extract_path = Path(temp_extract_dir)
+            with zipfile.ZipFile(local_zip_path, 'r') as zip_ref:
+                zip_ref.extractall(temp_extract_path)
+            print(f"Extracted {uploaded_object_key} to {temp_extract_path}")
+
+            for file_path in temp_extract_path.rglob("*"):
+                if file_path.is_file():
+                    relative_path = file_path.relative_to(temp_extract_path)
+                    s3_key = str(Path(projects_space) / relative_path)
+                    s3.upload_file(str(file_path), bucket, s3_key)
+                    print(f"Uploaded {file_path} to {
+                          s3_key} in bucket {bucket}")
+
+    except Exception as e:
+        print(f"Error unzipping {uploaded_object_key} and uploading contents to {
+              projects_space}. Exception: {e}")
+        raise e
+
+
+def generate_doc_links(doc_links_json, projects_space, bucket, uploaded_object_key, project_name, project_version):
+    """
+    Generating/updating 'docLinks.json' with all proejcts metadata.
+    """
+    s3_index_html_url = f"https://{bucket}.s3.amazonaws.com/{projects_space}/{
+        uploaded_object_key.replace('.zip', '/index.html')}"
+    s3_readme_url = f"https://{bucket}.s3.amazonaws.com/{projects_space}/{
+        uploaded_object_key.replace('.zip', '/index.html')}"
+
+    new_doc_links_entry = {
+        "name": project_name,
+        "version": project_version,
+        "urlIndexHtml": s3_index_html_url,
+        "urlReadme": s3_readme_url
+    }
+
+    doc_links = []
+
+    try:
+        metadata_response = s3.get_object(
+            Bucket=bucket, Key=doc_links_json)
+        metadata_content = metadata_response['Body'].read().decode('utf-8')
+        doc_links = json.loads(metadata_content)
+        print(f"Existing {doc_links_json} loaded. Version: {
+            metadata_response.get('VersionId', 'N/A')}")
+    except s3.exceptions.NoSuchKey:
+        print(f"{doc_links_json} does not exist.")
+
+    doc_links.append(new_doc_links_entry)
+
+    s3.put_object(
+        Bucket=bucket,
+        Key=doc_links_json,
+        Body=json.dumps(doc_links, indent=2),
+        ContentType='application/json'
+    )
+    print(f"{doc_links_json} updated successfully.")
