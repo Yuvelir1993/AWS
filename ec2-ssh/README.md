@@ -35,4 +35,4 @@ Move to WSL first since Windows filesystem not handling it correctly.
 
 ## SSH into new instance
 (update ec2-00-00-00-00.compute-1.amazonaws.com)
-`ssh -i ~/.ssh/ec2-cdk-key.pem ec2-user@ec2-<other-part>.compute.amazonaws.com`
+`ssh -i ~/.ssh/ec2-cdk-key.pem ubuntu@ec2-3-71-181-6.eu-central-1.compute.amazonaws.com`
