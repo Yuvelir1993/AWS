@@ -62,7 +62,7 @@ export class DataProcessingStack extends cdk.Stack {
       lambdaProjectDocsProcessing,
       `${Commons.S3_SPACE_PROJECTS}/*.zip`
     );
-    bucket.grantWrite(lambdaProjectDocsProcessing, Commons.S3_SPACE_PROJECTS);
+    bucket.grantPut(lambdaProjectDocsProcessing);
     bucket.grantReadWrite(lambdaProjectDocsProcessing, Commons.S3_DOC_LINKS);
 
     new cdk.CfnOutput(this, "UploadCommand", {
