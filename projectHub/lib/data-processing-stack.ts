@@ -63,7 +63,11 @@ export class DataProcessingStack extends cdk.Stack {
       `${Commons.S3_SPACE_PROJECTS}/*.zip`
     );
     bucket.grantReadWrite(lambdaProjectDocsProcessing, Commons.S3_DOC_LINKS);
-    bucket.grantReadWrite(lambdaProjectDocsProcessing, Commons.S3_SPACE_PROJECTS);
+    bucket.grantReadWrite(
+      lambdaProjectDocsProcessing,
+      Commons.S3_SPACE_PROJECTS
+    );
+    bucket.grantPut(lambdaProjectDocsProcessing, Commons.S3_SPACE_PROJECTS);
 
     new cdk.CfnOutput(this, "UploadCommand", {
       value: `aws s3 cp ./assets/web/resources/sample-python/PythonApi-0.1.0.zip s3://${bucket.bucketName}/${Commons.S3_SPACE_PROJECTS}/PythonApi-0.1.0.zip`,
