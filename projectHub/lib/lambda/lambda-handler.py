@@ -58,7 +58,8 @@ def generate_doc_links_on_upload(event, context):
     try:
         generate_doc_links(doc_links_json, projects_space, bucket,
                            uploaded_object_key, project_name, project_version)
-        unzip(bucket, uploaded_object_key, projects_space)
+        unzip(bucket, uploaded_object_key, projects_space,
+              project_name, project_version)
 
     except Exception as e:
         print(f"Error processing {uploaded_object_key} from bucket {
@@ -66,7 +67,7 @@ def generate_doc_links_on_upload(event, context):
         raise e
 
 
-def unzip(bucket, uploaded_object_key, projects_space):
+def unzip(bucket, uploaded_object_key, projects_space, project_name, project_version):
     """
     Unzipping the uploaded project and uploading its contents to the `projects_space` in the S3 bucket.
     """
@@ -85,7 +86,10 @@ def unzip(bucket, uploaded_object_key, projects_space):
             for file_path in temp_extract_path.rglob("*"):
                 if file_path.is_file():
                     relative_path = file_path.relative_to(temp_extract_path)
-                    s3_key = str(Path(projects_space) / relative_path)
+                    full_project_name = project_name + project_version
+                    s3_key = str(Path(projects_space) /
+                                 relative_path / full_project_name)
+                    print(f"Start uploading {file_path} to {bucket}/{s3_key}")
                     s3.upload_file(str(file_path), bucket, s3_key)
                     print(f"Uploaded {file_path} to {
                           s3_key} in bucket {bucket}")
