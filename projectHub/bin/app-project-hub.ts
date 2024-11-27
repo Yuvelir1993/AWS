@@ -36,6 +36,20 @@ import {
       targetEnv,
       targetEnvConfig,
       ec2InstanceRole: null,
+      vpcProps: null,
+      tags,
+    }
+  );
+
+  const ec2InstanceStack = new EC2InstanceStack(
+    app,
+    `ProjectHubEC2InstanceStack-${targetEnv}`,
+    {
+      description: "EC2 stack for the Web app itself.",
+      targetEnv,
+      targetEnvConfig,
+      ec2InstanceRole: securityStack.ec2InstanceRole,
+      vpcProps: null,
       tags,
     }
   );
@@ -45,14 +59,7 @@ import {
     targetEnv,
     targetEnvConfig,
     ec2InstanceRole: securityStack.ec2InstanceRole,
-    tags,
-  });
-
-  new EC2InstanceStack(app, `ProjectHubEC2InstanceStack-${targetEnv}`, {
-    description: "EC2 stack for the Web app itself.",
-    targetEnv,
-    targetEnvConfig,
-    ec2InstanceRole: securityStack.ec2InstanceRole,
+    vpcProps: ec2InstanceStack.myVpcProps,
     tags,
   });
 

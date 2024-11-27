@@ -66,6 +66,24 @@ export class DataProcessingStack extends cdk.Stack {
     bucket.grantPut(lambdaProjectDocsProcessing);
     bucket.grantReadWrite(lambdaProjectDocsProcessing, Commons.S3_DOC_LINKS);
 
+    // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-accesspoint-publicaccessblockconfiguration.html
+    new s3.CfnAccessPoint(this, `MyCfnAccessPoint-${props.targetEnv}`, {
+      name: `MyCfnAccessPoint-${props.targetEnv}`,
+      bucket: bucket.bucketName,
+      // the properties below are optional
+      // bucketAccountId: "bucketAccountId",
+      // policy: policy,
+      // publicAccessBlockConfiguration: {
+      //   blockPublicAcls: false,
+      //   blockPublicPolicy: false,
+      //   ignorePublicAcls: false,
+      //   restrictPublicBuckets: false,
+      // },
+      vpcConfiguration: {
+        vpcId: props.vpcProps?.vpc.vpcId,
+      },
+    });
+
     new cdk.CfnOutput(this, "UploadCommand", {
       value: `aws s3 cp ./assets/web/resources/sample-python/PythonApi-0.1.0.zip s3://${bucket.bucketName}/${Commons.S3_SPACE_PROJECTS}/PythonApi-0.1.0.zip`,
       description:

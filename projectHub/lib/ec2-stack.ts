@@ -1,11 +1,10 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
-import * as fs from "fs";
-import { MyStackProps } from "./data-model";
-import { Commons } from "./commons";
+import { MyStackProps, MyVpcProps } from "./data-model";
 
 export class EC2InstanceStack extends cdk.Stack {
+  public readonly myVpcProps: MyVpcProps;
   constructor(scope: Construct, id: string, props: MyStackProps) {
     super(scope, id, props);
 
@@ -18,7 +17,19 @@ export class EC2InstanceStack extends cdk.Stack {
           subnetType: ec2.SubnetType.PUBLIC,
         },
       ],
+      gatewayEndpoints: {
+        S3: {
+          service: ec2.GatewayVpcEndpointAwsService.S3,
+        },
+      },
     });
+
+    const vpcGatewayEndpoint = vpc.addGatewayEndpoint("S3Endpoint", {
+      service: ec2.GatewayVpcEndpointAwsService.S3,
+    });
+
+    this.myVpcProps.vpc = vpc;
+    this.myVpcProps.vpcGatewayEndpoint = vpcGatewayEndpoint;
 
     const securityGroup = new ec2.SecurityGroup(this, "SecurityGroup", {
       vpc,
@@ -68,6 +79,10 @@ export class EC2InstanceStack extends cdk.Stack {
     new cdk.CfnOutput(this, "EC2InstanceId", {
       value: instance.instanceId,
       description: "Instance ID",
+    });
+    new cdk.CfnOutput(this, `VPCGatewayEndpointS3`, {
+      value: vpcGatewayEndpoint.vpcEndpointId,
+      description: "ID of the VPC Gateway Endpoint S3",
     });
   }
 }
