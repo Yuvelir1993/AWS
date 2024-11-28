@@ -23,6 +23,7 @@ export class DataProcessingStack extends cdk.Stack {
       removalPolicy,
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
       websiteIndexDocument: "index.html",
+      publicReadAccess: false,
     });
 
     bucket.grantRead(
