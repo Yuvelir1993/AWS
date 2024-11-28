@@ -9,7 +9,7 @@ export class NetworkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: MyEnvProps) {
     super(scope, id, props);
 
-    const vpc = new ec2.Vpc(this, "VPC", {
+    const vpc = new ec2.Vpc(this, `VPC-${props.targetEnv}`, {
       vpcName: `VPC-${props.targetEnv}`,
       maxAzs: 2,
       subnetConfiguration: [
@@ -19,22 +19,24 @@ export class NetworkStack extends cdk.Stack {
           subnetType: ec2.SubnetType.PUBLIC,
         },
       ],
-      gatewayEndpoints: {
-        S3: {
-          service: ec2.GatewayVpcEndpointAwsService.S3,
-        },
-      },
     });
 
-    const vpcGatewayEndpoint = vpc.addGatewayEndpoint("S3Endpoint", {
-      service: ec2.GatewayVpcEndpointAwsService.S3,
-    });
+    const vpcGatewayEndpoint = vpc.addGatewayEndpoint(
+      `S3Endpoint-${props.targetEnv}`,
+      {
+        service: ec2.GatewayVpcEndpointAwsService.S3,
+      }
+    );
 
-    const securityGroup = new ec2.SecurityGroup(this, "SecurityGroup", {
-      vpc,
-      description: "Allow access to EC2 instances.",
-      allowAllOutbound: true,
-    });
+    const securityGroup = new ec2.SecurityGroup(
+      this,
+      `SecurityGroup-${props.targetEnv}`,
+      {
+        vpc,
+        description: "Allow access to EC2 instances.",
+        allowAllOutbound: true,
+      }
+    );
 
     securityGroup.addIngressRule(
       ec2.Peer.anyIpv4(),
