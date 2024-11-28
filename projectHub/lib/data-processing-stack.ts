@@ -72,7 +72,7 @@ export class DataProcessingStack extends cdk.Stack {
       this,
       `MyCfnAccessPoint-${props.myEnvProps.targetEnv}`,
       {
-        name: `MyCfnAccessPoint-${props.myEnvProps.targetEnv}`,
+        name: `vpc-to-s3-${props.myEnvProps.targetEnv}`,
         bucket: bucket.bucketName,
         // the properties below are optional
         // bucketAccountId: "bucketAccountId",
