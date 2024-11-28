@@ -2,7 +2,6 @@ import * as cdk from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { Construct } from "constructs";
 import { MyEnvProps, MyVpcProps } from "./data-model";
-import path = require("path");
 
 export class NetworkStack extends cdk.Stack {
   public readonly myVpcProps: MyVpcProps = {} as MyVpcProps;
