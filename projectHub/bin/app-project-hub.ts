@@ -9,6 +9,7 @@ import {
   CdkGraphDiagramPlugin,
   DiagramFormat,
 } from "@aws/pdk/cdk-graph-plugin-diagram";
+import { NetworkStack } from "../lib/network-stack";
 
 (async () => {
   const app = new cdk.App();
@@ -41,25 +42,31 @@ import {
     }
   );
 
-  const ec2InstanceStack = new EC2InstanceStack(
+  const networkStack = new NetworkStack(
     app,
-    `ProjectHubEC2InstanceStack-${targetEnv}`,
+    `ProjectHubNetworkStack-${targetEnv}`,
     {
-      description: "EC2 stack for the Web app itself.",
-      targetEnv,
-      targetEnvConfig,
-      ec2InstanceRole: securityStack.ec2InstanceRole,
-      vpcProps: null,
+      description:
+        "Stack for network-related resources to be used in other stacks.",
       tags,
     }
   );
+
+  new EC2InstanceStack(app, `ProjectHubEC2InstanceStack-${targetEnv}`, {
+    description: "EC2 stack for the Web app itself.",
+    targetEnv,
+    targetEnvConfig,
+    ec2InstanceRole: securityStack.ec2InstanceRole,
+    vpcProps: networkStack.myVpcProps,
+    tags,
+  });
 
   new DataProcessingStack(app, `ProjectHubDataProcessingStack-${targetEnv}`, {
     description: "S3, Lambdas and other resources related to the data layer.",
     targetEnv,
     targetEnvConfig,
     ec2InstanceRole: securityStack.ec2InstanceRole,
-    vpcProps: ec2InstanceStack.myVpcProps,
+    vpcProps: networkStack.myVpcProps,
     tags,
   });
 
