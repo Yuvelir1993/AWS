@@ -1,20 +1,21 @@
 import * as cdk from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { Construct } from "constructs";
-import { MyVpcProps } from "./data-model";
+import { MyEnvProps, MyVpcProps } from "./data-model";
 import path = require("path");
 
 export class NetworkStack extends cdk.Stack {
   public readonly myVpcProps: MyVpcProps = {} as MyVpcProps;
-  constructor(scope: Construct, id: string, props: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: MyEnvProps) {
     super(scope, id, props);
 
     const vpc = new ec2.Vpc(this, "VPC", {
+      vpcName: `VPC-${props.targetEnv}`,
       maxAzs: 2,
       subnetConfiguration: [
         {
           cidrMask: 24,
-          name: "public-subnet",
+          name: `public-subnet-${props.targetEnv}`,
           subnetType: ec2.SubnetType.PUBLIC,
         },
       ],

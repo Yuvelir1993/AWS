@@ -34,8 +34,10 @@ import { NetworkStack } from "../lib/network-stack";
     {
       description:
         "Stack for security-related resources to be used in other stacks.",
-      targetEnv,
-      targetEnvConfig,
+      myEnvProps: {
+        targetEnv,
+        targetEnvConfig,
+      },
       ec2InstanceRole: null,
       vpcProps: null,
       tags,
@@ -49,13 +51,17 @@ import { NetworkStack } from "../lib/network-stack";
       description:
         "Stack for network-related resources to be used in other stacks.",
       tags,
+      targetEnv,
+      targetEnvConfig,
     }
   );
 
   new EC2InstanceStack(app, `ProjectHubEC2InstanceStack-${targetEnv}`, {
     description: "EC2 stack for the Web app itself.",
-    targetEnv,
-    targetEnvConfig,
+    myEnvProps: {
+      targetEnv,
+      targetEnvConfig,
+    },
     ec2InstanceRole: securityStack.ec2InstanceRole,
     vpcProps: networkStack.myVpcProps,
     tags,
@@ -63,8 +69,10 @@ import { NetworkStack } from "../lib/network-stack";
 
   new DataProcessingStack(app, `ProjectHubDataProcessingStack-${targetEnv}`, {
     description: "S3, Lambdas and other resources related to the data layer.",
-    targetEnv,
-    targetEnvConfig,
+    myEnvProps: {
+      targetEnv,
+      targetEnvConfig,
+    },
     ec2InstanceRole: securityStack.ec2InstanceRole,
     vpcProps: networkStack.myVpcProps,
     tags,

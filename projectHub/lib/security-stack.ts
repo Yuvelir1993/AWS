@@ -11,10 +11,10 @@ export class SecurityStack extends cdk.Stack {
 
     this.ec2InstanceRole = new iam.Role(
       this,
-      `EC2InstanceRole-${props.targetEnv}`,
+      `EC2InstanceRole-${props.myEnvProps.targetEnv}`,
       {
         assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
-        description: `Given to EC2 in '${props.targetEnv}' environment to be used for downloading objects from S3.`,
+        description: `Given to EC2 in '${props.myEnvProps.targetEnv}' environment to be used for downloading objects from S3.`,
       }
     );
   }

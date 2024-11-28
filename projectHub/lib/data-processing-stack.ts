@@ -13,13 +13,13 @@ export class DataProcessingStack extends cdk.Stack {
     super(scope, id, props);
 
     const removalPolicy =
-      props.targetEnvConfig.bucketRemovalPolicy === "retain"
+      props.myEnvProps.targetEnvConfig.bucketRemovalPolicy === "retain"
         ? cdk.RemovalPolicy.RETAIN
         : cdk.RemovalPolicy.DESTROY;
 
     const bucket = new s3.Bucket(this, "S3StorageBucket", {
-      bucketName: props.targetEnvConfig.bucketName,
-      versioned: props.targetEnvConfig.bucketVersioning,
+      bucketName: props.myEnvProps.targetEnvConfig.bucketName,
+      versioned: props.myEnvProps.targetEnvConfig.bucketVersioning,
       removalPolicy,
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
       websiteIndexDocument: "index.html",
@@ -67,22 +67,26 @@ export class DataProcessingStack extends cdk.Stack {
     bucket.grantReadWrite(lambdaProjectDocsProcessing, Commons.S3_DOC_LINKS);
 
     // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-accesspoint-publicaccessblockconfiguration.html
-    new s3.CfnAccessPoint(this, `MyCfnAccessPoint-${props.targetEnv}`, {
-      name: `MyCfnAccessPoint-${props.targetEnv}`,
-      bucket: bucket.bucketName,
-      // the properties below are optional
-      // bucketAccountId: "bucketAccountId",
-      // policy: policy,
-      // publicAccessBlockConfiguration: {
-      //   blockPublicAcls: false,
-      //   blockPublicPolicy: false,
-      //   ignorePublicAcls: false,
-      //   restrictPublicBuckets: false,
-      // },
-      vpcConfiguration: {
-        vpcId: props.vpcProps?.vpc.vpcId,
-      },
-    });
+    new s3.CfnAccessPoint(
+      this,
+      `MyCfnAccessPoint-${props.myEnvProps.targetEnv}`,
+      {
+        name: `MyCfnAccessPoint-${props.myEnvProps.targetEnv}`,
+        bucket: bucket.bucketName,
+        // the properties below are optional
+        // bucketAccountId: "bucketAccountId",
+        // policy: policy,
+        // publicAccessBlockConfiguration: {
+        //   blockPublicAcls: false,
+        //   blockPublicPolicy: false,
+        //   ignorePublicAcls: false,
+        //   restrictPublicBuckets: false,
+        // },
+        vpcConfiguration: {
+          vpcId: props.vpcProps?.vpc.vpcId,
+        },
+      }
+    );
 
     new cdk.CfnOutput(this, "UploadCommand", {
       value: `aws s3 cp ./assets/web/resources/sample-python/PythonApi-0.1.0.zip s3://${bucket.bucketName}/${Commons.S3_SPACE_PROJECTS}/PythonApi-0.1.0.zip`,
