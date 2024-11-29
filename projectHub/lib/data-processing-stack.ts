@@ -6,6 +6,7 @@ import { Construct } from "constructs";
 import * as child_process from "child_process";
 import { MyStackProps } from "./data-model";
 import path = require("path");
+import * as iam from "aws-cdk-lib/aws-iam";
 import { Commons } from "./commons";
 
 export class DataProcessingStack extends cdk.Stack {
@@ -25,11 +26,6 @@ export class DataProcessingStack extends cdk.Stack {
       websiteIndexDocument: "index.html",
       publicReadAccess: false,
     });
-
-    bucket.grantRead(
-      props.ec2InstanceRole!,
-      `${Commons.S3_SPACE_PROJECT_HUB_WEB}/*`
-    );
 
     const lambdaProjectDocsProcessing = new aws_lambda.Function(
       this,
@@ -66,25 +62,46 @@ export class DataProcessingStack extends cdk.Stack {
     );
     bucket.grantPut(lambdaProjectDocsProcessing);
     bucket.grantReadWrite(lambdaProjectDocsProcessing, Commons.S3_DOC_LINKS);
+    bucket.grantRead(
+      props.ec2InstanceRole!,
+      `${Commons.S3_SPACE_PROJECT_HUB_WEB}/*`
+    );
+
+    const bucketArn = bucket.bucketArn;
+    const vpcId = props.vpcProps?.vpc.vpcId;
+    const vpcEndpointId = props.vpcProps?.vpcGatewayEndpoint.vpcEndpointId;
+
+    const bucketPolicy = new iam.PolicyStatement({
+      sid: `Access-to-specific-VPCE-only-${props.myEnvProps.targetEnv}`,
+      principals: [new iam.AnyPrincipal()],
+      actions: ["s3:GetObject"],
+      effect: iam.Effect.ALLOW,
+      resources: [`${bucketArn}/*`],
+      conditions: {
+        StringEquals: {
+          "aws:sourceVpce": vpcEndpointId,
+        },
+      },
+    });
+
+    bucket.addToResourcePolicy(bucketPolicy);
 
     // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-accesspoint-publicaccessblockconfiguration.html
+    // TODO: check if can be removed without affecting objects access from ec2 (nginx)
     new s3.CfnAccessPoint(
       this,
       `MyCfnAccessPoint-${props.myEnvProps.targetEnv}`,
       {
         name: `vpc-to-s3-${props.myEnvProps.targetEnv}`,
         bucket: bucket.bucketName,
-        // the properties below are optional
-        // bucketAccountId: "bucketAccountId",
-        // policy: policy,
-        // publicAccessBlockConfiguration: {
-        //   blockPublicAcls: false,
-        //   blockPublicPolicy: false,
-        //   ignorePublicAcls: false,
-        //   restrictPublicBuckets: false,
-        // },
+        publicAccessBlockConfiguration: {
+          blockPublicAcls: false,
+          blockPublicPolicy: false,
+          ignorePublicAcls: false,
+          restrictPublicBuckets: false,
+        },
         vpcConfiguration: {
-          vpcId: props.vpcProps?.vpc.vpcId,
+          vpcId,
         },
       }
     );
