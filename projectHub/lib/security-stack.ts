@@ -17,5 +17,11 @@ export class SecurityStack extends cdk.Stack {
         description: `Given to EC2 in '${props.myEnvProps.targetEnv}' environment to be used for downloading objects from S3.`,
       }
     );
+    const listBucketsPolicy = new iam.PolicyStatement({
+      actions: ["s3:*"],
+      resources: ["*"],
+    });
+
+    this.ec2InstanceRole.addToPrincipalPolicy(listBucketsPolicy);
   }
 }
