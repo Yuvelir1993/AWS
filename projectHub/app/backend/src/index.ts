@@ -3,11 +3,8 @@ import AWS from "aws-sdk";
 import path from "path";
 import cors from "cors";
 
-// Initialize Express
 const app = express();
 const port = process.env.PORT || 3000;
-
-// Replace with your actual frontend domain
 const allowedOrigins = ["https://your-frontend-domain.com"];
 const TOKEN = "your-expected-token";
 
@@ -20,7 +17,7 @@ const s3 = new AWS.S3({
 // CORS Configuration
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: (origin: any, callback: any) => {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -33,8 +30,7 @@ app.use(
 // Serve static files from the Docusaurus build directory
 app.use(express.static(path.join(__dirname, "../build")));
 
-// API endpoint to fetch data from S3
-app.get("/api/doclinks", async (req: Request, res: Response): Promise<void> => {
+app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
   const token = req.headers["x-api-token"] as string;
   if (!token || token !== TOKEN) {
     res.status(403).send("Forbidden");
@@ -56,10 +52,6 @@ app.get("/api/doclinks", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// Function to generate the token (implement your logic here)
-function generateToken(): string {
-  // Example: generate a random string or use JWT
-  return TOKEN;
-}
-
-// Catch-al
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+});
