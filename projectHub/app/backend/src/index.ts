@@ -8,13 +8,10 @@ const port = process.env.PORT || 3000;
 const allowedOrigins = ["https://your-frontend-domain.com"];
 const TOKEN = "your-expected-token";
 
-// AWS S3 Configuration
 const s3 = new AWS.S3({
   region: process.env.AWS_REGION || "eu-central-1",
-  // Credentials are not needed if using IAM roles on EC2
 });
 
-// CORS Configuration
 app.use(
   cors({
     origin: (origin: any, callback: any) => {
@@ -27,7 +24,6 @@ app.use(
   })
 );
 
-// Serve static files from the Docusaurus build directory
 app.use(express.static(path.join(__dirname, "../build")));
 
 app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
