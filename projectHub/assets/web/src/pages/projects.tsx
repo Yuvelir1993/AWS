@@ -3,6 +3,7 @@ import ProjectList from "../components/projects/ProjectList";
 import ProjectReadme from "../components/projects/ProjectReadme";
 import mockDocLinks from "../mocks/projects";
 import "../css/projects.css";
+import axios from "axios";
 
 const Projects = () => {
   const [docLinks, setDocLinks] = useState([]);
@@ -89,14 +90,28 @@ export default Projects;
 async function getDocLinksData() {
   if (process.env.NODE_ENV && process.env.NODE_ENV.indexOf("dev") > -1) {
     console.log("Using mock data for development");
-    return mockDocLinks; // Return mock data
+    return mockDocLinks;
   } else {
-    const jsonUrl = "https://your-cloudfront-url/docLinks.json";
-    const response = await fetch(jsonUrl);
-    if (!response.ok) {
-      throw new Error("Failed to fetch doc links");
+    const apiDocLinks = "https://api.yourEC2domain.com/api/docLinks";
+
+    // Retrieve the token from the <meta> tag
+    const token = document
+      .querySelector('meta[name="api-token"]')
+      .getAttribute("content");
+
+    try {
+      // Make the request with the token in the headers
+      const res = await axios.get(apiDocLinks, {
+        headers: {
+          "X-API-Token": token,
+        },
+      });
+
+      console.log("Data retrieved from API", res.data);
+      return res.data;
+    } catch (err) {
+      console.error("Error retrieving data:", err);
+      throw new Error("Failed to fetch data from the API");
     }
-    const data = await response.json();
-    return data;
   }
 }
