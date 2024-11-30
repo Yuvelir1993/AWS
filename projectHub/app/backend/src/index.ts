@@ -4,7 +4,6 @@ import {
   GetObjectCommand,
   GetObjectRequest,
 } from "@aws-sdk/client-s3";
-import path from "path";
 import cors from "cors";
 
 const app = express();
