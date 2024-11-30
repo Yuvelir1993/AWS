@@ -1,5 +1,9 @@
 import express, { Request, Response } from "express";
-import AWS from "aws-sdk";
+import {
+  S3Client,
+  GetObjectCommand,
+  GetObjectRequest,
+} from "@aws-sdk/client-s3";
 import path from "path";
 import cors from "cors";
 
@@ -7,8 +11,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 const allowedOrigins = ["https://your-frontend-domain.com"];
 const TOKEN = "your-expected-token";
-
-const s3 = new AWS.S3({
+const s3Client = new S3Client({
   region: process.env.AWS_REGION || "eu-central-1",
 });
 
@@ -23,8 +26,7 @@ app.use(
     },
   })
 );
-
-app.use(express.static(path.join(__dirname, "../build")));
+app.use(express.static('../build'));
 
 app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
   const token = req.headers["x-api-token"] as string;
@@ -33,19 +35,23 @@ app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const params: AWS.S3.GetObjectRequest = {
-    Bucket: process.env.S3_BUCKET_NAME || "",
-    Key: "docLinks.json",
-  };
-
   try {
-    const data = await s3.getObject(params).promise();
-    const jsonContent = JSON.parse(data.Body!.toString("utf-8"));
+    const input: GetObjectRequest = {
+      Bucket: process.env.S3_BUCKET_NAME || "",
+      Key: "docLinks.json",
+    };
+    const command = new GetObjectCommand(input);
+    const response = await s3Client.send(command);
+    const jsonContent = response.Body?.transformToString();
     res.json(jsonContent);
   } catch (error) {
     console.error("S3 Fetch Error:", error);
     res.status(500).json({ error: "Failed to fetch data" });
   }
+});
+
+app.get("/", (req, res) => {
+  res.send("Hello World!");
 });
 
 app.listen(port, () => {
