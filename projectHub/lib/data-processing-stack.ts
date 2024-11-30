@@ -87,19 +87,12 @@ export class DataProcessingStack extends cdk.Stack {
     bucket.addToResourcePolicy(bucketPolicy);
 
     // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-accesspoint-publicaccessblockconfiguration.html
-    // TODO: check if can be removed without affecting objects access from ec2 (nginx)
     new s3.CfnAccessPoint(
       this,
       `MyCfnAccessPoint-${props.myEnvProps.targetEnv}`,
       {
         name: `vpc-to-s3-${props.myEnvProps.targetEnv}`,
         bucket: bucket.bucketName,
-        publicAccessBlockConfiguration: {
-          blockPublicAcls: false,
-          blockPublicPolicy: false,
-          ignorePublicAcls: false,
-          restrictPublicBuckets: false,
-        },
         vpcConfiguration: {
           vpcId,
         },
