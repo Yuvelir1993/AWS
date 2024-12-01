@@ -5,6 +5,8 @@ import {
   GetObjectRequest,
 } from "@aws-sdk/client-s3";
 import cors from "cors";
+import path from "path";
+import fs from "fs";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -25,18 +27,42 @@ app.use(
     },
   })
 );
-app.use(express.static('../build'));
+
+// app.use((req, res, next) => {
+//   if (req.url === "/index.html" || req.url === "/") {
+//     const filePath = path.join(__dirname, "../build/index.html");
+//     fs.readFile(filePath, "utf8", (err, data) => {
+//       if (err) {
+//         console.error("Failed to read HTML file:", err);
+//         res.status(500).send("Server error");
+//         return;
+//       }
+
+//       const injectedHtml = data.replace(
+//         "</head>",
+//         `<meta name="api-token" content="${TOKEN}" /></head>`
+//       );
+//       res.set("Content-Type", "text/html");
+//       res.send(injectedHtml);
+//     });
+//   } else {
+//     next();
+//   }
+// });
+
+app.use(express.static("../build"));
 
 app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
   const token = req.headers["x-api-token"] as string;
-  if (!token || token !== TOKEN) {
-    res.status(403).send("Forbidden");
-    return;
-  }
+  // if (!token || token !== TOKEN) {
+  //   // TODO: try 'render' to show appropriate page
+  //   res.status(403).send("Forbidden");
+  //   return;
+  // }
 
   try {
     const input: GetObjectRequest = {
-      Bucket: process.env.S3_BUCKET_NAME || "",
+      Bucket: process.env.S3_BUCKET_NAME || "project-hub-bucket-green",
       Key: "docLinks.json",
     };
     const command = new GetObjectCommand(input);
