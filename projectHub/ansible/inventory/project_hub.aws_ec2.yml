@@ -7,4 +7,4 @@ regions:
 # https://docs.aws.amazon.com/cli/latest/reference/ec2/describe-instances.html#options
 filters:
   instance-state-name: running
-  tag:Name: ProjectHub
+  tag:project: ProjectHub

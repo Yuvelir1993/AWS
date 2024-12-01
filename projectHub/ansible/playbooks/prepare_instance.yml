@@ -61,13 +61,21 @@
       debug:
         msg: "npm version installed: {{ npm_version.stdout }}"
 
-    - name: Update the repository cache and update package "nginx" to latest version
-      ansible.builtin.apt:
-        name: nginx
-        state: latest
+    # - name: Update the repository cache and update package "nginx" to latest version
+    #   ansible.builtin.apt:
+    #     name: nginx
+    #     state: latest
 
-    - name: Start Nginx
-      ansible.builtin.service:
-        name: nginx
-        state: started
-        enabled: yes
+    # - name: Start Nginx
+    #   ansible.builtin.service:
+    #     name: nginx
+    #     state: started
+    #     enabled: yes
+
+    - name: Install necessary packages
+      ansible.builtin.apt:
+        name:
+          - zip
+          - unzip
+          - findutils
+        state: present

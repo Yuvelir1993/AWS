@@ -1,6 +1,6 @@
 {
   "name": "app-project-hub",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Project Hub to access statically generated documentations on S3 through a user web interface.",
   "bin": {
     "app-project-hub": "bin/app-project-hub.js"

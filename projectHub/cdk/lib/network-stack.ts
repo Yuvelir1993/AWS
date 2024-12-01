@@ -39,6 +39,18 @@ export class NetworkStack extends cdk.Stack {
 
     securityGroup.addIngressRule(
       ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(3000),
+      "Allow HTTP traffic on port 3000 for the Web App (IPv4)"
+    );
+
+    securityGroup.addIngressRule(
+      ec2.Peer.anyIpv6(),
+      ec2.Port.tcp(3000),
+      "Allow HTTP traffic on port 3000 for the Web App (IPv6)"
+    );
+
+    securityGroup.addIngressRule(
+      ec2.Peer.anyIpv4(),
       ec2.Port.HTTP,
       "Allow HTTP traffic"
     );

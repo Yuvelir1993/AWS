@@ -1,22 +1,35 @@
 ---
-- name: Deploying and starting application
+- name: Package application locally
+  hosts: localhost
+  vars:
+    build_folder: "../build"
+  tasks:
+    - name: Ensure build folder exists
+      ansible.builtin.file:
+        path: "{{ build_folder }}"
+        state: directory
+
+    - name: Create ZIP file for deployment
+      ansible.builtin.archive:
+        path:
+          - "../../app/build"
+          - "../../app/backend/dist"
+          - "../../app/backend/package.json"
+        dest: "{{ build_folder }}/projectHubApp.zip"
+        format: zip
+
+- name: Deploy ZIP file and start application
   hosts: all
   become: yes
   vars:
     user: "ubuntu"
+    build_folder: "../build"
     project_base_path: "/var/www/projectHubApp"
-    app_build_source: "../app/build"
-    backend_dist_source: "../backend/dist"
-    backend_package_json_source: "../backend/package.json"
+    zip_file_path: "{{ build_folder }}/projectHubApp.zip"
     app_target_path: "{{ project_base_path }}"
     backend_target_path: "{{ project_base_path }}/backend"
 
   tasks:
-    - name: Kill existing application process (if running)
-      ansible.builtin.shell: |
-        pkill -f "node .*start" || true
-      ignore_errors: true
-
     - name: Ensure target directories exist
       ansible.builtin.file:
         path: "{{ item }}"
@@ -28,29 +41,27 @@
         - "{{ app_target_path }}"
         - "{{ backend_target_path }}"
 
-    - name: Copy frontend build to target directory
+    - name: Copy ZIP file to target server
       ansible.builtin.copy:
-        src: "{{ app_build_source }}/"
-        dest: "{{ app_target_path }}/"
+        src: "{{ zip_file_path }}"
+        dest: "/tmp/projectHubApp.zip"
         owner: "{{ user }}"
         group: "{{ user }}"
-        mode: "0755"
 
-    - name: Copy backend dist to target directory
-      ansible.builtin.copy:
-        src: "{{ backend_dist_source }}/"
-        dest: "{{ backend_target_path }}/"
-        owner: "{{ user }}"
-        group: "{{ user }}"
-        mode: "0755"
+    - name: Extract ZIP file to target directory
+      ansible.builtin.unarchive:
+        src: "/tmp/projectHubApp.zip"
+        dest: "{{ app_target_path }}"
+        remote_src: yes
 
-    - name: Copy package.json to backend target directory
-      ansible.builtin.copy:
-        src: "{{ backend_package_json_source }}"
-        dest: "{{ backend_target_path }}/"
-        owner: "{{ user }}"
-        group: "{{ user }}"
-        mode: "0644"
+    - name: List extracted files and directories
+      ansible.builtin.shell: |
+        find "{{ app_target_path }}" -type f | wc -l
+      register: file_count
+
+    - name: Log file count
+      ansible.builtin.debug:
+        msg: "Number of files extracted: {{ file_count.stdout }}"
 
     - name: Install production dependencies for backend
       ansible.builtin.command:
@@ -61,6 +72,6 @@
 
     - name: Start the application process
       ansible.builtin.shell: |
-        nohup npm run start > /var/log/app.log 2>&1 &
+        nohup npm run start > /var/log/projectHubApp.log 2>&1 &
       args:
         chdir: "{{ backend_target_path }}"

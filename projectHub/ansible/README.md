@@ -29,6 +29,13 @@ Do not use `sudo` since `become: true` automatically elevates needed permissions
 1. `ANSIBLE_CONFIG=ansible.cfg ansible-playbook ./playbooks/prepare_instance.yml`
 2. `ANSIBLE_CONFIG=ansible.cfg ansible-playbook ./playbooks/deploy_website.yml`
 
+### Verify deployment package
+```bash
+unzip ./build/projectHubApp.zip -d ./projectHubApp_build
+tree ./projectHubApp_build
+```
+
+
 # Troubleshooting
 
 ## UNREACHABLE

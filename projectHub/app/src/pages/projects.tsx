@@ -89,22 +89,25 @@ export default Projects;
 
 async function getDocLinksData() {
   if (process.env.NODE_ENV && process.env.NODE_ENV.indexOf("dev") > -1) {
-    console.log("Using mock data for development");
+    console.log("Using mock data for development...");
     return mockDocLinks;
   } else {
-    const apiDocLinks = "https://api.yourEC2domain.com/api/docLinks";
+    console.log("Fetching documentation urls from S3.");
+    // const apiDocLinks = "api/docLinks";
+    const apiDocLinks = "/api/docLinks";
+    // const token = document
+    //   .querySelector('meta[name="api-token"]')
+    //   .getAttribute("content");
 
-    // Retrieve the token from the <meta> tag
-    const token = document
-      .querySelector('meta[name="api-token"]')
-      .getAttribute("content");
+    // console.log(
+    //   `The public token ${token} will be used to communicate with backend.`
+    // );
 
     try {
-      // Make the request with the token in the headers
       const res = await axios.get(apiDocLinks, {
-        headers: {
-          "X-API-Token": token,
-        },
+        // headers: {
+        //   "X-API-Token": token,
+        // },
       });
 
       console.log("Data retrieved from API", res.data);
