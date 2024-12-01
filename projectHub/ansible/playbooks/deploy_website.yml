@@ -1,0 +1,66 @@
+---
+- name: Deploying and starting application
+  hosts: all
+  become: yes
+  vars:
+    user: "ubuntu"
+    project_base_path: "/var/www/projectHubApp"
+    app_build_source: "../app/build"
+    backend_dist_source: "../backend/dist"
+    backend_package_json_source: "../backend/package.json"
+    app_target_path: "{{ project_base_path }}"
+    backend_target_path: "{{ project_base_path }}/backend"
+
+  tasks:
+    - name: Kill existing application process (if running)
+      ansible.builtin.shell: |
+        pkill -f "node .*start" || true
+      ignore_errors: true
+
+    - name: Ensure target directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+      with_items:
+        - "{{ app_target_path }}"
+        - "{{ backend_target_path }}"
+
+    - name: Copy frontend build to target directory
+      ansible.builtin.copy:
+        src: "{{ app_build_source }}/"
+        dest: "{{ app_target_path }}/"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+
+    - name: Copy backend dist to target directory
+      ansible.builtin.copy:
+        src: "{{ backend_dist_source }}/"
+        dest: "{{ backend_target_path }}/"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+
+    - name: Copy package.json to backend target directory
+      ansible.builtin.copy:
+        src: "{{ backend_package_json_source }}"
+        dest: "{{ backend_target_path }}/"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0644"
+
+    - name: Install production dependencies for backend
+      ansible.builtin.command:
+        cmd: npm install --production
+        chdir: "{{ backend_target_path }}"
+      environment:
+        NODE_ENV: production
+
+    - name: Start the application process
+      ansible.builtin.shell: |
+        nohup npm run start > /var/log/app.log 2>&1 &
+      args:
+        chdir: "{{ backend_target_path }}"

@@ -1,0 +1,10 @@
+---
+# https://docs.ansible.com/ansible/latest/collections/amazon/aws/aws_ec2_inventory.html
+plugin: amazon.aws.aws_ec2
+profile: default
+regions:
+  - eu-central-1
+# https://docs.aws.amazon.com/cli/latest/reference/ec2/describe-instances.html#options
+filters:
+  instance-state-name: running
+  tag:Name: ProjectHub
