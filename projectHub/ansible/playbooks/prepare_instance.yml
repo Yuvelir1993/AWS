@@ -6,6 +6,8 @@
   gather_facts: false
   connection: ssh
   become: yes
+  vars:
+    NODEJS_VERSION: "23"
   tasks:
     - name: Populate Apt's Cache with package definitions to avoid "no such package" errors
       ansible.builtin.apt:
@@ -20,13 +22,52 @@
         name: ["boto3", "botocore"]
         extra_args: "--user"
 
+    - name: Run NodeSource setup script directly
+      ansible.builtin.shell: curl -fsSL https://deb.nodesource.com/setup_23.x | bash -
+      args:
+        executable: /bin/bash
+
+    - name: Install Node.js
+      ansible.builtin.apt:
+        name: nodejs
+        state: present
+        update_cache: yes
+
+    - name: Verify Node.js installation
+      ansible.builtin.shell: "node -v"
+      register: node_version
+      ignore_errors: yes
+
+    - name: Print Node.js version
+      ansible.builtin.debug:
+        msg: "Node.js version installed: {{ node_version.stdout }}"
+
+    - name: Clean up NodeSource setup script
+      ansible.builtin.file:
+        path: /tmp/nodesource_setup.sh
+        state: absent
+
+    - name: Ensure npm is installed or updated
+      shell: "npm install -g npm@latest"
+      args:
+        executable: /bin/bash
+
+    - name: Verify npm installation
+      shell: "npm -v"
+      register: npm_version
+      ignore_errors: yes
+
+    - name: Print npm version
+      debug:
+        msg: "npm version installed: {{ npm_version.stdout }}"
+
     - name: Update the repository cache and update package "nginx" to latest version
       ansible.builtin.apt:
         name: nginx
         state: latest
 
     - name: Start Nginx
-      service:
+      ansible.builtin.service:
         name: nginx
         state: started
         enabled: yes
