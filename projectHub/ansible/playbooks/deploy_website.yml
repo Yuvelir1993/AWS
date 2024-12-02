@@ -6,6 +6,7 @@
     package_name: "projectHubApp.zip"
     app_frontend_path: "../../app"
     app_backend_path: "{{ app_frontend_path }}/backend"
+
   tasks:
     - name: Ensure build folder exists
       ansible.builtin.file:
@@ -51,7 +52,7 @@
     backend_target_path: "{{ project_base_path }}/backend"
 
   tasks:
-    - name: Ensure target directories exist
+    - name: Ensure target directories for App exist
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
@@ -69,7 +70,7 @@
         owner: "{{ user }}"
         group: "{{ user }}"
 
-    - name: Extract ZIP file to target directory
+    - name: Extract package ZIP file to App target directory
       ansible.builtin.unarchive:
         src: "/tmp/{{ package_name }}"
         dest: "{{ app_target_path }}"
