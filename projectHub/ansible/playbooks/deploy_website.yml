@@ -36,6 +36,7 @@
           - "../../app/build"
           - "../../app/backend/dist"
           - "../../app/backend/package.json"
+          - "../../app/backend/package-lock.json"
         dest: "{{ build_folder }}/{{ package_name }}"
         format: zip
 
