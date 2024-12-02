@@ -83,7 +83,7 @@
 
     - name: Log file count
       ansible.builtin.debug:
-        msg: "Number of files extracted: {{ file_count.stdout }}"
+        msg: "Number of files extracted in {{ app_target_path }}: {{ file_count.stdout }}"
 
     - name: Install production dependencies for backend
       ansible.builtin.command:

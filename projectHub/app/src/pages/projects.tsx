@@ -110,7 +110,7 @@ async function getDocLinksData() {
         // },
       });
 
-      console.log("Data retrieved from API", res.data);
+      console.log("Data retrieved from API", res);
       return res.data;
     } catch (err) {
       console.error("Error retrieving data:", err);

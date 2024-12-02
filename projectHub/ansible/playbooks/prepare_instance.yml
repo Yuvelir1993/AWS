@@ -48,17 +48,17 @@
         state: absent
 
     - name: Ensure npm is installed or updated
-      shell: "npm install -g npm@latest"
+      ansible.builtin.shell: "npm install -g npm@latest"
       args:
         executable: /bin/bash
 
     - name: Verify npm installation
-      shell: "npm -v"
+      ansible.builtin.shell: "npm -v"
       register: npm_version
       ignore_errors: yes
 
     - name: Print npm version
-      debug:
+      ansible.builtin.debug:
         msg: "npm version installed: {{ npm_version.stdout }}"
 
     # - name: Update the repository cache and update package "nginx" to latest version
@@ -72,10 +72,24 @@
     #     state: started
     #     enabled: yes
 
-    - name: Install necessary packages
+    - name: Install necessary Linux packages
       ansible.builtin.apt:
         name:
           - zip
           - unzip
           - findutils
         state: present
+
+    - name: Install "pm2" - process manager for Node.JS
+      community.general.npm:
+        name: pm2
+        global: true
+
+    - name: Verify pm2 installation
+      ansible.builtin.shell: "pm2 -V"
+      register: pm2_version
+      ignore_errors: yes
+
+    - name: Print pm2 version
+      ansible.builtin.debug:
+        msg: "pm2 version installed: {{ pm2_version.stdout }}"

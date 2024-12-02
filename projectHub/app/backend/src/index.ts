@@ -68,6 +68,7 @@ app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
     const command = new GetObjectCommand(input);
     const response = await s3Client.send(command);
     const jsonContent = response.Body?.transformToString();
+    console.log(`Retrieved 'docLinks.json' content: ${jsonContent}`);
     res.json(jsonContent);
   } catch (error) {
     console.error("S3 Fetch Error:", error);
