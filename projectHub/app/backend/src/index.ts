@@ -10,23 +10,23 @@ import fs from "fs";
 
 const app = express();
 const port = process.env.PORT || 3000;
-const allowedOrigins = ["https://your-frontend-domain.com"];
+// const allowedOrigins = ["https://your-frontend-domain.com"];
 const TOKEN = "your-expected-token";
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || "eu-central-1",
 });
 
-app.use(
-  cors({
-    origin: (origin: any, callback: any) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-  })
-);
+// app.use(
+//   cors({
+//     origin: (origin: any, callback: any) => {
+//       if (!origin || allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//   })
+// );
 
 // app.use((req, res, next) => {
 //   if (req.url === "/index.html" || req.url === "/") {
