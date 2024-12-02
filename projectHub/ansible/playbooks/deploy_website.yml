@@ -3,11 +3,31 @@
   hosts: localhost
   vars:
     build_folder: "../build"
+    package_name: "projectHubApp.zip"
+    app_frontend_path: "../../app"
+    app_backend_path: "{{ app_frontend_path }}/backend"
   tasks:
     - name: Ensure build folder exists
       ansible.builtin.file:
         path: "{{ build_folder }}"
         state: directory
+
+    - name: Build frontend
+      ansible.builtin.command:
+        cmd: npm run build
+        chdir: "{{ app_frontend_path }}"
+      ignore_errors: no
+
+    - name: Build backend
+      ansible.builtin.command:
+        cmd: npm run build
+        chdir: "{{ app_backend_path }}"
+      ignore_errors: no
+
+    - name: Remove old package
+      ansible.builtin.file:
+        path: "{{ build_folder }}/{{ package_name }}"
+        state: absent
 
     - name: Create ZIP file for deployment
       ansible.builtin.archive:
@@ -15,7 +35,7 @@
           - "../../app/build"
           - "../../app/backend/dist"
           - "../../app/backend/package.json"
-        dest: "{{ build_folder }}/projectHubApp.zip"
+        dest: "{{ build_folder }}/{{ package_name }}"
         format: zip
 
 - name: Deploy ZIP file and start application
@@ -24,8 +44,9 @@
   vars:
     user: "ubuntu"
     build_folder: "../build"
+    package_name: "projectHubApp.zip"
     project_base_path: "/var/www/projectHubApp"
-    zip_file_path: "{{ build_folder }}/projectHubApp.zip"
+    zip_file_path: "{{ build_folder }}/{{ package_name }}"
     app_target_path: "{{ project_base_path }}"
     backend_target_path: "{{ project_base_path }}/backend"
 
@@ -44,13 +65,13 @@
     - name: Copy ZIP file to target server
       ansible.builtin.copy:
         src: "{{ zip_file_path }}"
-        dest: "/tmp/projectHubApp.zip"
+        dest: "/tmp/{{ package_name }}"
         owner: "{{ user }}"
         group: "{{ user }}"
 
     - name: Extract ZIP file to target directory
       ansible.builtin.unarchive:
-        src: "/tmp/projectHubApp.zip"
+        src: "/tmp/{{ package_name }}"
         dest: "{{ app_target_path }}"
         remote_src: yes
 
