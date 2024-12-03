@@ -1,8 +1,9 @@
 import express, { Request, Response } from "express";
 import {
-  S3Client,
   GetObjectCommand,
-  GetObjectRequest,
+  NoSuchKey,
+  S3Client,
+  S3ServiceException,
 } from "@aws-sdk/client-s3";
 import cors from "cors";
 import path from "path";
@@ -59,20 +60,29 @@ app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
   //   res.status(403).send("Forbidden");
   //   return;
   // }
-
   try {
-    const input: GetObjectRequest = {
-      Bucket: process.env.S3_BUCKET_NAME || "project-hub-bucket-green",
-      Key: "docLinks.json",
-    };
-    const command = new GetObjectCommand(input);
-    const response = await s3Client.send(command);
-    const jsonContent = response.Body?.transformToString();
-    console.log(`Retrieved 'docLinks.json' content: ${jsonContent}`);
-    res.json(jsonContent);
-  } catch (error) {
-    console.error("S3 Fetch Error:", error);
-    res.status(500).json({ error: "Failed to fetch data" });
+    const s3ClientResponse = await s3Client.send(
+      new GetObjectCommand({
+        Bucket: "project-hub-bucket-green",
+        Key: "docLinks.json",
+      })
+    );
+
+    const str = await s3ClientResponse.Body?.transformToString();
+    console.log(`Retrieved 'docLinks.json' content: ${str}`);
+    res.json(str);
+  } catch (caught) {
+    if (caught instanceof NoSuchKey) {
+      console.error(
+        `Error from S3 while getting docLinks.json from project-hub-bucket-green. No such key exists.`
+      );
+    } else if (caught instanceof S3ServiceException) {
+      console.error(
+        `Error from S3 while getting object from project-hub-bucket-green.  ${caught.name}: ${caught.message}`
+      );
+    } else {
+      throw caught;
+    }
   }
 });
 
