@@ -84,12 +84,12 @@ app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
         // Create commands for the GetObject operation
         const indexCommand = new GetObjectCommand({
           Bucket: bucketName,
-          Key: doc.urlIndexHtml,
+          Key: doc.urlIndexHtml.replace(/^.*?projects\//, "projects/"),
         });
 
         const readmeCommand = new GetObjectCommand({
           Bucket: bucketName,
-          Key: doc.urlReadme,
+          Key: doc.urlReadme.replace(/^.*?projects\//, "projects/"),
         });
 
         try {
