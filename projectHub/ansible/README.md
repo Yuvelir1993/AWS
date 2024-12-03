@@ -26,8 +26,8 @@ Will call AWS API to return available hosts.
 
 ## Play playbooks
 Do not use `sudo` since `become: true` automatically elevates needed permissions.
-1. `ANSIBLE_CONFIG=ansible.cfg ansible-playbook ./playbooks/prepare_instance.yml`
-2. `ANSIBLE_CONFIG=ansible.cfg ansible-playbook ./playbooks/deploy_website.yml`
+1. `ANSIBLE_CONFIG=ansible.cfg ansible-playbook ./playbooks/provision.yml`
+2. `ANSIBLE_CONFIG=ansible.cfg ansible-playbook ./playbooks/deploy.yml`
 
 ### Verify deployment package
 ```bash
