@@ -82,8 +82,8 @@ app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
         const bucketName = "project-hub-bucket-green";
 
         // Assuming the S3 object keys follow a consistent pattern
-        const indexKey = `projects/projects/${doc.name}-${doc.version}/docs/index.html`;
-        const readmeKey = `projects/projects/${doc.name}-${doc.version}/README.md`; // Adjust the path if necessary
+        const indexKey = `projects/${doc.name}-${doc.version}/docs/index.html`;
+        const readmeKey = `projects/${doc.name}-${doc.version}/README.md`;
 
         // Create commands for the GetObject operation
         const indexCommand = new GetObjectCommand({
@@ -101,6 +101,11 @@ app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
           const signedIndexUrl = await getSignedUrl(s3Client, indexCommand, {
             expiresIn: 3600,
           });
+
+          console.log(
+            `Getting signed url '${signedIndexUrl}' for '${indexKey}'`
+          );
+
           const signedReadmeUrl = await getSignedUrl(s3Client, readmeCommand, {
             expiresIn: 3600,
           });
