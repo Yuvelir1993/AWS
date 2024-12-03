@@ -1,0 +1,8 @@
+---
+- name: Package application locally
+  hosts: localhost
+  vars:
+    build_folder: "../build"
+    package_name: "projectHubApp.zip"
+    app_frontend_path: "../../app"
+    app_backend_path: "{{ app_frontend_path }}/backend"
