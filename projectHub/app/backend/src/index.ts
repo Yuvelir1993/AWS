@@ -1,14 +1,10 @@
 import express, { Request, Response } from "express";
 import {
   GetObjectCommand,
-  NoSuchKey,
   S3Client,
   S3ServiceException,
-  getSignedUrl,
 } from "@aws-sdk/client-s3";
-import cors from "cors";
-import path from "path";
-import fs from "fs";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 interface DocLink {
   name: string;
