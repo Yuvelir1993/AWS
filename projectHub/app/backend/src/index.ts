@@ -20,6 +20,8 @@ const app = express();
 const port = process.env.PORT || 3000;
 // const allowedOrigins = ["https://your-frontend-domain.com"];
 const TOKEN = "your-expected-token";
+const bucketName = "project-hub-bucket-green";
+const docLinksJson = "docLinks.json";
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || "eu-central-1",
 });
@@ -61,17 +63,16 @@ const s3Client = new S3Client({
 app.use(express.static("../build"));
 app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
   try {
-    // Step 1: Retrieve 'docLinks.json' from S3
     const getObjectCommand = new GetObjectCommand({
-      Bucket: "project-hub-bucket-green",
-      Key: "docLinks.json",
+      Bucket: bucketName,
+      Key: docLinksJson,
     });
 
     const s3ClientResponse = await s3Client.send(getObjectCommand);
 
     // Step 2: Parse the content into an array of DocLink objects
     const str = await s3ClientResponse.Body?.transformToString();
-    console.log(`Retrieved 'docLinks.json' content: ${str}`);
+    console.log(`Retrieved '${docLinksJson}' content: ${str}`);
 
     const docLinks: DocLink[] = JSON.parse(str!);
 
@@ -79,21 +80,16 @@ app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
     await Promise.all(
       docLinks.map(async (doc) => {
         // Extract the bucket name and key from the URLs or reconstruct them
-        const bucketName = "project-hub-bucket-green";
-
-        // Assuming the S3 object keys follow a consistent pattern
-        const indexKey = `projects/${doc.name}-${doc.version}/docs/index.html`;
-        const readmeKey = `projects/${doc.name}-${doc.version}/README.md`;
 
         // Create commands for the GetObject operation
         const indexCommand = new GetObjectCommand({
           Bucket: bucketName,
-          Key: indexKey,
+          Key: doc.urlIndexHtml,
         });
 
         const readmeCommand = new GetObjectCommand({
           Bucket: bucketName,
-          Key: readmeKey,
+          Key: doc.urlReadme,
         });
 
         try {
@@ -103,7 +99,7 @@ app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
           });
 
           console.log(
-            `Getting signed url '${signedIndexUrl}' for '${indexKey}'`
+            `Getting signed url '${signedIndexUrl}' for '${doc.urlIndexHtml}'`
           );
 
           const signedReadmeUrl = await getSignedUrl(s3Client, readmeCommand, {
@@ -130,9 +126,9 @@ app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
   } catch (caught) {
     if (caught instanceof S3ServiceException) {
       console.error(
-        `Error from S3 while getting 'docLinks.json' from project-hub-bucket-green. ${caught.name}: ${caught.message}`
+        `Error from S3 while getting '${docLinksJson}' from ${bucketName}. ${caught.name}: ${caught.message}`
       );
-      res.status(500).send("Error retrieving 'docLinks.json' from S3");
+      res.status(500).send("Error retrieving '${docLinksJson}' from S3");
     } else {
       console.error("Unexpected error:", caught);
       res.status(500).send("An unexpected error occurred");
