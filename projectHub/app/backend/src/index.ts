@@ -128,7 +128,7 @@ app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
       console.error(
         `Error from S3 while getting '${docLinksJson}' from ${bucketName}. ${caught.name}: ${caught.message}`
       );
-      res.status(500).send("Error retrieving '${docLinksJson}' from S3");
+      res.status(500).send(`Error retrieving '${docLinksJson}' from S3`);
     } else {
       console.error("Unexpected error:", caught);
       res.status(500).send("An unexpected error occurred");
