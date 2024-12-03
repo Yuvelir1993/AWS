@@ -109,11 +109,21 @@ app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
           // Step 4: Append the signed URLs to the doc object
           doc.signedUrlIndexHtml = signedIndexUrl;
           doc.signedUrlReadme = signedReadmeUrl;
-        } catch (error) {
-          console.error(
-            `Error generating signed URLs for ${doc.name}-${doc.version}:`,
-            error
-          );
+        } catch (caught) {
+          if (
+            caught instanceof Error &&
+            caught.name === "CredentialsProviderError"
+          ) {
+            console.error(
+              `There was an error getting your credentials. Are your local credentials configured?\n${caught.name}: ${caught.message}`
+            );
+          } else {
+            console.error(
+              `Error generating signed URLs for ${doc.name}-${doc.version}:`,
+              caught
+            );
+            throw caught;
+          }
           // Handle errors as needed (e.g., set signed URLs to null or default values)
           doc.signedUrlIndexHtml = "";
           doc.signedUrlReadme = "";
