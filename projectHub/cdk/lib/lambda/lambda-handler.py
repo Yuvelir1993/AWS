@@ -105,9 +105,9 @@ def generate_doc_links(doc_links_json, projects_space, bucket, uploaded_object_k
     Generating/updating 'docLinks.json' with all proejcts metadata.
     """
     s3_index_html_url = f"https://{bucket}.s3.amazonaws.com/{projects_space}/{
-        uploaded_object_key.replace('.zip', '/index.html')}"
+        uploaded_object_key.replace('.zip', '/docs/index.html')}"
     s3_readme_url = f"https://{bucket}.s3.amazonaws.com/{projects_space}/{
-        uploaded_object_key.replace('.zip', '/index.html')}"
+        uploaded_object_key.replace('.zip', '/README.md')}"
 
     new_doc_links_entry = {
         "name": project_name,
