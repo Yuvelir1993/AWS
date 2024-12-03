@@ -86,7 +86,7 @@ def unzip(bucket, uploaded_object_key, projects_space, project_name, project_ver
             for file_path in temp_extract_path.rglob("*"):
                 if file_path.is_file():
                     relative_path = file_path.relative_to(temp_extract_path)
-                    full_project_name = project_name + project_version
+                    full_project_name = project_name + "-" + project_version
                     s3_key = str(Path(projects_space) /
                                  full_project_name / relative_path)
                     print(f"Start uploading {file_path} to {bucket}/{s3_key}")
