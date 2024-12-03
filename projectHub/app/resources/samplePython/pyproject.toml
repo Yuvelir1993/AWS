@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "sample-python"
+name = "samplePython"
 version = "0.1.0"
 description = ""
 authors = ["plozovik <plozovikov@gmail.com>"]

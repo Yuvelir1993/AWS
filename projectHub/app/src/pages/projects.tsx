@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from "react";
 import ProjectList from "../components/projects/ProjectList";
-import ProjectReadme from "../components/projects/ProjectReadme";
-import mockDocLinks from "../mocks/projects";
 import "../css/projects.css";
 import axios from "axios";
+import mockDocLinks from "../mocks/projects";
 
 const Projects = () => {
   const [docLinks, setDocLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState(null);
-  const [readmeContent, setReadmeContent] = useState("");
-  const [readmeLoading, setReadmeLoading] = useState(false);
 
   useEffect(() => {
     const fetchDocLinks = async () => {
@@ -27,27 +24,11 @@ const Projects = () => {
     fetchDocLinks();
   }, []);
 
-  const handleProjectClick = async (doc) => {
+  const handleProjectClick = (doc) => {
+    console.log(`Setting chosen project...`);
+    console.log(doc);
+
     setSelectedProject(doc);
-    setReadmeLoading(true);
-    try {
-      let content = "";
-      if (process.env.NODE_ENV && process.env.NODE_ENV.indexOf("dev") > -1) {
-        content = doc.readmeMockData || "Mock README content not available.";
-      } else {
-        const response = await fetch(doc.readmeUrl);
-        if (!response.ok) {
-          throw new Error("Failed to fetch README.md");
-        }
-        content = await response.text();
-      }
-      setReadmeContent(content);
-    } catch (error) {
-      console.error("Error fetching README.md:", error);
-      setReadmeContent("Error loading README.md content.");
-    } finally {
-      setReadmeLoading(false);
-    }
   };
 
   if (loading) return <p>Loading documentation links...</p>;
@@ -62,11 +43,11 @@ const Projects = () => {
       {/* Main content area */}
       <main className="flex-1 p-6">
         {selectedProject ? (
-          <ProjectReadme
-            selectedProject={selectedProject}
-            readmeContent={readmeContent}
-            readmeLoading={readmeLoading}
-          />
+          <iframe
+            src={selectedProject.signedUrlIndexHtml}
+            style={{ width: "100%", height: "100vh", border: "none" }}
+            title={`${selectedProject.name} Documentation`}
+          ></iframe>
         ) : (
           <div className="text-gray-700">
             <h3 className="text-2xl font-semibold mb-4">Welcome!</h3>
@@ -75,8 +56,7 @@ const Projects = () => {
               documentation.
             </p>
             <p>
-              Here, you’ll find detailed README files and other documentation
-              for each project version.
+              Here, you’ll find detailed documentation for each project version.
             </p>
           </div>
         )}
@@ -92,25 +72,14 @@ async function getDocLinksData() {
     console.log("Using mock data for development...");
     return mockDocLinks;
   } else {
-    console.log("Fetching documentation urls from S3.");
-    // const apiDocLinks = "api/docLinks";
+    console.log("Fetching documentation links from the API.");
     const apiDocLinks = "/api/docLinks";
-    // const token = document
-    //   .querySelector('meta[name="api-token"]')
-    //   .getAttribute("content");
-
-    // console.log(
-    //   `The public token ${token} will be used to communicate with backend.`
-    // );
 
     try {
-      const res = await axios.get(apiDocLinks, {
-        // headers: {
-        //   "X-API-Token": token,
-        // },
-      });
+      const res = await axios.get(apiDocLinks);
+      console.log(`Response from the API call`);
+      console.log(res);
 
-      console.log("Data retrieved from API", res);
       return res.data;
     } catch (err) {
       console.error("Error retrieving data:", err);

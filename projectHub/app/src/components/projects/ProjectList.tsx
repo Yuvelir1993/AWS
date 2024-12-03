@@ -1,6 +1,9 @@
 import React from "react";
 
 const ProjectList = ({ docLinks, onSelectProject }) => {
+  console.log(`Retrieved docLinks.json in ProjectList...`);
+  console.log(docLinks);
+
   const groupedProjects = docLinks.reduce((acc, doc) => {
     if (!acc[doc.name]) {
       acc[doc.name] = [];

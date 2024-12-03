@@ -28,6 +28,7 @@ Will call AWS API to return available hosts.
 Do not use `sudo` since `become: true` automatically elevates needed permissions.
 1. `ANSIBLE_CONFIG=ansible.cfg ansible-playbook ./playbooks/provision.yml`
 2. `ANSIBLE_CONFIG=ansible.cfg ansible-playbook ./playbooks/build_deploy.yml`
+3. `ANSIBLE_CONFIG=ansible.cfg ansible-playbook ./playbooks/make_docs.yml`
 
 ### Verify deployment package
 ```bash

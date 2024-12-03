@@ -1,8 +1,82 @@
 ---
-- name: Package application locally
+- name: Build and package docs into a common Project Hub zip format
   hosts: localhost
   vars:
-    build_folder: "../build"
-    package_name: "projectHubApp.zip"
-    app_frontend_path: "../../app"
-    app_backend_path: "{{ app_frontend_path }}/backend"
+    test_projects_folder: "../../app/resources"
+  tasks:
+    - name: Find project folders
+      find:
+        paths: "{{ test_projects_folder }}"
+        file_type: directory
+      register: project_dirs
+
+    - name: Process each project folder
+      block:
+        - name: Check for pyproject.toml file
+          stat:
+            path: "{{ item.path }}/pyproject.toml"
+          register: pyproject_stat
+          with_items: "{{ project_dirs.files }}"
+          loop_control:
+            label: "{{ item.path }}"
+
+        - name: Filter folders with pyproject.toml
+          set_fact:
+            python_projects: "{{ python_projects | default([]) + [item.item] }}"
+          with_items: "{{ pyproject_stat.results }}"
+          when: item.stat.exists
+
+        - name: Extract name and version from pyproject.toml
+          command: >
+            grep -E '^(name|version)' {{ item.path }}/pyproject.toml
+          register: project_meta
+          with_items: "{{ python_projects }}"
+          loop_control:
+            label: "{{ item.path }}"
+
+        - name: Parse project metadata
+          ansible.builtin.set_fact:
+            project_name: '{{ item.stdout_lines[0].split(''='')[1] | trim('' "'') }}'
+            project_version: '{{ item.stdout_lines[1].split(''='')[1] | trim('' "'') }}'
+          with_items: "{{ project_meta.results }}"
+          loop_control:
+            label: "{{ item.item.path }}"
+
+        - name: Debug project metadata
+          ansible.builtin.debug:
+            msg:
+              - "Project Name: {{ project_name }}"
+              - "Project Version: {{ project_version }}"
+          with_items: "{{ project_meta.results }}"
+          loop_control:
+            label: "{{ item.item.path }}"
+
+        - name: Install python project dependencies and build documentation
+          ansible.builtin.shell: |
+            poetry install && poetry run pdoc ./sample_python/api.py --output-dir docs
+          args:
+            chdir: "{{ item.item.path }}"
+          with_items: "{{ project_meta.results }}"
+          loop_control:
+            label: "{{ item.item.path }}"
+
+        - name: Create build directory
+          ansible.builtin.file:
+            path: "{{ item.item.path }}/build"
+            state: directory
+          with_items: "{{ project_meta.results }}"
+          loop_control:
+            label: "{{ item.item.path }}"
+
+        - name: Package documentation into zip
+          ansible.builtin.archive:
+            path:
+              - "{{ item.item.path }}/docs"
+              - "{{ item.item.path }}/README.md"
+            dest: "{{ item.item.path }}/build/{{ project_name }}-{{ project_version }}.zip"
+            format: zip
+          with_items: "{{ project_meta.results }}"
+          loop_control:
+            label: "{{ item.item.path }}"
+
+      when: project_dirs.matched > 0

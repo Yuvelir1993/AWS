@@ -4,10 +4,21 @@ import {
   NoSuchKey,
   S3Client,
   S3ServiceException,
+  getSignedUrl,
 } from "@aws-sdk/client-s3";
 import cors from "cors";
 import path from "path";
 import fs from "fs";
+
+interface DocLink {
+  name: string;
+  version: string;
+  urlIndexHtml: string;
+  urlReadme: string;
+  // We will add the signed URLs as new properties
+  signedUrlIndexHtml?: string;
+  signedUrlReadme?: string;
+}
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -52,42 +63,80 @@ const s3Client = new S3Client({
 // });
 
 app.use(express.static("../build"));
-
 app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
-  const token = req.headers["x-api-token"] as string;
-  // if (!token || token !== TOKEN) {
-  //   // TODO: try 'render' to show appropriate page
-  //   res.status(403).send("Forbidden");
-  //   return;
-  // }
   try {
-    const s3ClientResponse = await s3Client.send(
-      new GetObjectCommand({
-        Bucket: "project-hub-bucket-green",
-        Key: "docLinks.json",
+    // Step 1: Retrieve 'docLinks.json' from S3
+    const getObjectCommand = new GetObjectCommand({
+      Bucket: "project-hub-bucket-green",
+      Key: "docLinks.json",
+    });
+
+    const s3ClientResponse = await s3Client.send(getObjectCommand);
+
+    // Step 2: Parse the content into an array of DocLink objects
+    const str = await s3ClientResponse.Body?.transformToString();
+    console.log(`Retrieved 'docLinks.json' content: ${str}`);
+
+    const docLinks: DocLink[] = JSON.parse(str!);
+
+    // Step 3: For each DocLink, generate signed URLs
+    await Promise.all(
+      docLinks.map(async (doc) => {
+        // Extract the bucket name and key from the URLs or reconstruct them
+        const bucketName = "project-hub-bucket-green";
+
+        // Assuming the S3 object keys follow a consistent pattern
+        const indexKey = `projects/projects/${doc.name}-${doc.version}/docs/index.html`;
+        const readmeKey = `projects/projects/${doc.name}-${doc.version}/README.md`; // Adjust the path if necessary
+
+        // Create commands for the GetObject operation
+        const indexCommand = new GetObjectCommand({
+          Bucket: bucketName,
+          Key: indexKey,
+        });
+
+        const readmeCommand = new GetObjectCommand({
+          Bucket: bucketName,
+          Key: readmeKey,
+        });
+
+        try {
+          // Generate signed URLs for both index.html and README.md
+          const signedIndexUrl = await getSignedUrl(s3Client, indexCommand, {
+            expiresIn: 3600,
+          });
+          const signedReadmeUrl = await getSignedUrl(s3Client, readmeCommand, {
+            expiresIn: 3600,
+          });
+
+          // Step 4: Append the signed URLs to the doc object
+          doc.signedUrlIndexHtml = signedIndexUrl;
+          doc.signedUrlReadme = signedReadmeUrl;
+        } catch (error) {
+          console.error(
+            `Error generating signed URLs for ${doc.name}-${doc.version}:`,
+            error
+          );
+          // Handle errors as needed (e.g., set signed URLs to null or default values)
+          doc.signedUrlIndexHtml = "";
+          doc.signedUrlReadme = "";
+        }
       })
     );
 
-    const str = await s3ClientResponse.Body?.transformToString();
-    console.log(`Retrieved 'docLinks.json' content: ${str}`);
-    res.json(str);
+    // Step 5: Return the modified array
+    res.json(docLinks);
   } catch (caught) {
-    if (caught instanceof NoSuchKey) {
+    if (caught instanceof S3ServiceException) {
       console.error(
-        `Error from S3 while getting docLinks.json from project-hub-bucket-green. No such key exists.`
+        `Error from S3 while getting 'docLinks.json' from project-hub-bucket-green. ${caught.name}: ${caught.message}`
       );
-    } else if (caught instanceof S3ServiceException) {
-      console.error(
-        `Error from S3 while getting object from project-hub-bucket-green.  ${caught.name}: ${caught.message}`
-      );
+      res.status(500).send("Error retrieving 'docLinks.json' from S3");
     } else {
-      throw caught;
+      console.error("Unexpected error:", caught);
+      res.status(500).send("An unexpected error occurred");
     }
   }
-});
-
-app.get("/", (req, res) => {
-  res.send("Hello World!");
 });
 
 app.listen(port, () => {
