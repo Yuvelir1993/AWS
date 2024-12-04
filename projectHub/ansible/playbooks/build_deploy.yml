@@ -93,6 +93,7 @@
       environment:
         NODE_ENV: production
 
+    # may be first restart or reload?
     - name: Start the application process
       ansible.builtin.shell: |
         nohup npm run start > /var/log/projectHubApp.log 2>&1 &
