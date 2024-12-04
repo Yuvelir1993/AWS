@@ -53,7 +53,7 @@
 
         - name: Install python project dependencies and build documentation
           ansible.builtin.shell: |
-            poetry install && poetry run pdoc ./sample_python/api.py --output-dir docs
+            poetry install && poetry run pdoc ./sample_python -o ./docs
           args:
             chdir: "{{ item.item.path }}"
           with_items: "{{ project_meta.results }}"
