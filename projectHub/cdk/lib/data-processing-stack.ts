@@ -1,5 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import * as s3 from "aws-cdk-lib/aws-s3";
+import * as aws_cloudfront from "aws-cdk-lib/aws-cloudfront";
+import * as aws_cloudfront_origins from "aws-cdk-lib/aws-cloudfront-origins";
 import * as s3_notifications from "aws-cdk-lib/aws-s3-notifications";
 import * as aws_lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
@@ -25,7 +27,38 @@ export class DataProcessingStack extends cdk.Stack {
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
       websiteIndexDocument: "index.html",
       publicReadAccess: false,
+      objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
     });
+
+    const s3Origin =
+      aws_cloudfront_origins.S3BucketOrigin.withOriginAccessControl(bucket);
+
+    const distributionBehaviorCfg: aws_cloudfront.BehaviorOptions = {
+      origin: s3Origin,
+      // allowedMethods: aws_cloudfront.AllowedMethods.ALLOW_ALL,
+      // compress to lower down the costs: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ServingCompressedFiles.html#compressed-content-cloudfront-file-types
+      // compress: true,
+      // viewerProtocolPolicy: aws_cloudfront.ViewerProtocolPolicy.ALLOW_ALL,
+    };
+
+    const cfDistribution = new aws_cloudfront.Distribution(
+      this,
+      "ProjectHubProjectsDistribution",
+      {
+        defaultBehavior: {
+          ...distributionBehaviorCfg,
+        },
+        defaultRootObject: `index.html`,
+        errorResponses: [
+          {
+            httpStatus: 403,
+            responseHttpStatus: 403,
+            responsePagePath: "/error.html",
+            ttl: cdk.Duration.minutes(30),
+          },
+        ],
+      }
+    );
 
     const lambdaProjectDocsProcessing = new aws_lambda.Function(
       this,
@@ -85,6 +118,7 @@ export class DataProcessingStack extends cdk.Stack {
     });
 
     bucket.addToResourcePolicy(bucketPolicy);
+    // create custom policy for cfDistribution?
 
     // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-accesspoint-publicaccessblockconfiguration.html
     new s3.CfnAccessPoint(
@@ -103,6 +137,11 @@ export class DataProcessingStack extends cdk.Stack {
       value: `aws s3 cp ../app/resources/samplePython/build/samplePython-0.1.0.zip s3://${bucket.bucketName}/${Commons.S3_SPACE_PROJECTS}/PythonApi-0.1.0.zip`,
       description:
         "Test AWS CLI command to upload the project's docs zip file to S3",
+    });
+
+    new cdk.CfnOutput(this, "CloudFront", {
+      value: `${cfDistribution.distributionDomainName}`,
+      description: "Cloud Front distribution domain name.",
     });
   }
 
