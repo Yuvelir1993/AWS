@@ -7,10 +7,122 @@ import zipfile
 import mimetypes
 from pathlib import Path
 import boto3
+import html
 
 print('Loading function...')
 
 s3 = boto3.client('s3')
+
+
+class Validator:
+    def __init__(self, extract_path: Path):
+        self.extract_path = extract_path
+        self.errors = []
+
+    def validate(self) -> bool:
+        """
+        Runs all validation checks and returns True if all pass, False otherwise.
+        """
+        checks = [
+            self._check_docs_folder_exists,
+            self._check_index_html_exists,
+            self._check_index_html_has_body,
+        ]
+
+        for check in checks:
+            check()
+
+        return len(self.errors) == 0
+
+    def _check_docs_folder_exists(self):
+        docs_path = self.extract_path / 'docs'
+        if not docs_path.is_dir():
+            self.errors.append("Missing 'docs' folder.")
+        else:
+            self.docs_path = docs_path
+
+    def _check_index_html_exists(self):
+        if hasattr(self, 'docs_path'):
+            index_html_path = self.docs_path / 'index.html'
+            if not index_html_path.is_file():
+                self.errors.append(
+                    "Missing 'index.html' file in 'docs' folder.")
+            else:
+                self.index_html_path = index_html_path
+        else:
+            pass
+
+    def _check_index_html_has_body(self):
+        if hasattr(self, 'index_html_path'):
+            with open(self.index_html_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            if not re.search(r'<body[^>]*>', content, re.IGNORECASE):
+                self.errors.append(
+                    "'index.html' does not contain a <body> element.")
+
+    def get_error_messages(self):
+        return self.errors
+
+
+def generate_error_index_html(error_messages: list) -> str:
+    """
+    Generates an error index.html content with the provided error messages.
+    """
+    escaped_messages = [html.escape(message) for message in error_messages]
+    error_html = f"""<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Validation Error</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            background-color: #f8d7da;
+            color: #721c24;
+            margin: 0;
+            padding: 20px;
+        }}
+        .container {{
+            max-width: 600px;
+            margin: auto;
+        }}
+        h1 {{
+            text-align: center;
+        }}
+        ul {{
+            list-style-type: disc;
+            margin-left: 20px;
+        }}
+        .rules {{
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid #ffeeba;
+            border-radius: 5px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Validation Failed</h1>
+        <p>The uploaded project did not pass the validation checks. Please address the following issues:</p>
+        <ul>
+            {''.join(f'<li>{message}</li>' for message in escaped_messages)}
+        </ul>
+        <div class="rules">
+            <h2>Submission Rules:</h2>
+            <ul>
+                <li>The project must contain a <strong>'docs'</strong> folder.</li>
+                <li>The <strong>'docs'</strong> folder must include an <strong>'index.html'</strong> file.</li>
+                <li>The <strong>'index.html'</strong> file must contain at least a <strong>&lt;body&gt;</strong> element.</li>
+                <!-- Add more rules here if needed -->
+            </ul>
+        </div>
+    </div>
+</body>
+</html>"""
+    return error_html
 
 
 def generate_doc_links_on_upload(event, context):
@@ -57,10 +169,10 @@ def generate_doc_links_on_upload(event, context):
           project_name}, Version: {project_version}")
 
     try:
-        generate_doc_links(doc_links_json, projects_space, bucket,
+        generate_doc_links(doc_links_json, bucket,
                            uploaded_object_key, project_name, project_version)
-        unzip(bucket, uploaded_object_key, projects_space,
-              project_name, project_version)
+        unzip_validate_upload(bucket, uploaded_object_key, projects_space,
+                              project_name, project_version)
 
     except Exception as e:
         print(f"Error processing {uploaded_object_key} from bucket {
@@ -68,9 +180,10 @@ def generate_doc_links_on_upload(event, context):
         raise e
 
 
-def unzip(bucket, uploaded_object_key, projects_space, project_name, project_version):
+def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project_name, project_version):
     """
-    Unzipping the uploaded project and uploading its contents to the `projects_space` in the S3 bucket.
+    Unzipping the uploaded project, validating, and uploading its contents to the `projects_space` in the S3 bucket.
+    If validation fails, uploads an error index.html to the 'docs' folder.
     """
     try:
         temp_dir = Path(tempfile.gettempdir())
@@ -84,32 +197,57 @@ def unzip(bucket, uploaded_object_key, projects_space, project_name, project_ver
                 zip_ref.extractall(temp_extract_path)
             print(f"Extracted {uploaded_object_key} to {temp_extract_path}")
 
-            for file_path in temp_extract_path.rglob("*"):
-                if file_path.is_file():
-                    relative_path = file_path.relative_to(temp_extract_path)
-                    full_project_name = f"{project_name}-{project_version}"
-                    s3_key = str(Path(projects_space) /
-                                 full_project_name / relative_path)
-                    print(f"Start uploading {file_path} to {bucket}/{s3_key}")
+            validator = Validator(temp_extract_path)
+            if validator.validate():
+                print("Validation passed. Proceeding to upload files.")
+                for file_path in temp_extract_path.rglob("*"):
+                    if file_path.is_file():
+                        relative_path = file_path.relative_to(
+                            temp_extract_path)
+                        full_project_name = f"{project_name}-{project_version}"
+                        s3_key = str(Path(projects_space) /
+                                     full_project_name / relative_path)
+                        print(f"Start uploading {
+                              file_path} to {bucket}/{s3_key}")
 
-                    content_type, _ = mimetypes.guess_type(str(file_path))
-                    if content_type is None:
-                        content_type = 'binary/octet-stream'
+                        content_type, _ = mimetypes.guess_type(str(file_path))
+                        if content_type is None:
+                            content_type = 'binary/octet-stream'
 
-                    s3.upload_file(
-                        str(file_path),
-                        bucket,
-                        s3_key,
-                        ExtraArgs={'ContentType': content_type}
-                    )
-                    print(f"Uploaded {file_path} to {s3_key} in bucket {
-                          bucket} with Content-Type {content_type}")
+                        s3.upload_file(
+                            str(file_path),
+                            bucket,
+                            s3_key,
+                            ExtraArgs={'ContentType': content_type}
+                        )
+                        print(f"Uploaded {file_path} to {s3_key} in bucket {
+                              bucket} with Content-Type {content_type}")
+            else:
+                print("Validation failed. Uploading error index.html.")
+                error_messages = validator.get_error_messages()
+                error_html_content = generate_error_index_html(error_messages)
+
+                full_project_name = f"{project_name}-{project_version}"
+                s3_key = str(Path(projects_space) /
+                             full_project_name / 'docs' / 'index.html')
+                print(f"Uploading error index.html to {bucket}/{s3_key}")
+
+                # Check if 'full_project_name' key exists in s3?
+                # Potential place for step functions integration? or sending notification in any other way?
+                s3.put_object(
+                    Bucket=bucket,
+                    Key=s3_key,
+                    Body=error_html_content.encode('utf-8'),
+                    ContentType='text/html'
+                )
+                print(f"Uploaded error index.html to {
+                      s3_key} in bucket {bucket}")
     except Exception as e:
         print(f"An error occurred: {e}")
         raise e
 
 
-def generate_doc_links(doc_links_json, projects_space, bucket, uploaded_object_key, project_name, project_version):
+def generate_doc_links(doc_links_json, bucket, uploaded_object_key, project_name, project_version):
     """
     Generating/updating 'docLinks.json' with all proejcts metadata.
     """
