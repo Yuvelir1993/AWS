@@ -125,7 +125,7 @@ def generate_error_index_html(error_messages: list) -> str:
     return error_html
 
 
-def generate_doc_links_on_upload(event, context):
+def proceed(event, context):
     print("Received event: " + json.dumps(event, indent=2))
     print("Function Name:", context.function_name)
     print("Function Version:", context.function_version)
