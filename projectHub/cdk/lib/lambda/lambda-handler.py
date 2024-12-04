@@ -249,7 +249,8 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project_n
 
 def generate_doc_links(doc_links_json, bucket, uploaded_object_key, project_name, project_version):
     """
-    Generating/updating 'docLinks.json' with all proejcts metadata.
+    Generating/updating 'docLinks.json' with all projects infos.
+    If the same project (name and version) already exists, it will update the entry.
     """
     s3_index_html_url = f"https://{bucket}.s3.amazonaws.com/{
         uploaded_object_key.replace('.zip', '/docs/index.html')}"
@@ -275,7 +276,19 @@ def generate_doc_links(doc_links_json, bucket, uploaded_object_key, project_name
     except s3.exceptions.NoSuchKey:
         print(f"{doc_links_json} does not exist.")
 
-    doc_links.append(new_doc_links_entry)
+    updated = False
+    for index, entry in enumerate(doc_links):
+        if entry['name'] == project_name and entry['version'] == project_version:
+            doc_links[index] = new_doc_links_entry
+            updated = True
+            print(f"Updated existing entry for project '{
+                  project_name}' version '{project_version}'.")
+            break
+
+    if not updated:
+        doc_links.append(new_doc_links_entry)
+        print(f"Added new entry for project '{
+              project_name}' version '{project_version}'.")
 
     s3.put_object(
         Bucket=bucket,
