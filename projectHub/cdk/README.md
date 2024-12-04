@@ -20,3 +20,5 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `npx cdk deploy -c targetEnv=(blue/green) --all`                                         deploy all stacks to your (blue/green) AWS environment
 * `npx cdk deploy ProjectHubEC2InstanceStack-green -c targetEnv=(blue/green)`              deploy this stack to your (blue/green) AWS environment
 * `npx cdk destroy -c targetEnv=(blue/green)`                                              destroy the whole (blue/green) AWS environment
+### Quick CDK commands
+`npx cdk deploy ProjectHubDataProcessingStack-green -c targetEnv=green`
