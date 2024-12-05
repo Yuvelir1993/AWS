@@ -4,7 +4,7 @@
   "description": "Backend for serving static files and API with Express and AWS S3 integration",
   "main": "dist/index.js",
   "scripts": {
-    "start": "set S3_BUCKET_NAME=project-hub-bucket-green && pm2 start dist/index.js --name projectHubApp --env production",
+    "start": "pm2 start ecosystem.config.js --env green",
     "build": "tsc",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"

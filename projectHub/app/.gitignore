@@ -1,6 +1,8 @@
 # Dependencies
 **/node_modules
 *.js
+!ecosystem.config.js
+*.log
 
 # Production
 **/build
