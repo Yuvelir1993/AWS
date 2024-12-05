@@ -1,0 +1,60 @@
+---
+- name: Build and package Java project documentation
+  hosts: localhost
+  vars:
+    test_projects_folder: "../../app/resources"
+    hardcoded_project_name: "sampleJava"
+    hardcoded_project_version: "1.0.0"
+  tasks:
+    - name: Find project folders
+      find:
+        paths: "{{ test_projects_folder }}"
+        file_type: directory
+      register: project_dirs
+
+    - name: Process each project folder
+      block:
+        - name: Check for build.gradle.kts file
+          stat:
+            path: "{{ item.path }}/plugin/build.gradle.kts"
+          register: gradle_stat
+          with_items: "{{ project_dirs.files }}"
+          loop_control:
+            label: "{{ item.path }}"
+
+        - name: Filter folders with build.gradle.kts
+          set_fact:
+            java_projects: "{{ java_projects | default([]) + [item.item] }}"
+          with_items: "{{ gradle_stat.results }}"
+          when: item.stat.exists
+
+        - name: Debug hardcoded project metadata
+          ansible.builtin.debug:
+            msg:
+              - "Hardcoded Project Name: {{ hardcoded_project_name }}"
+              - "Hardcoded Project Version: {{ hardcoded_project_version }}"
+          with_items: "{{ java_projects }}"
+          loop_control:
+            label: "{{ item.path }}"
+
+        # - name: Clean, build, and generate Javadoc
+        #   ansible.builtin.shell: |
+        #     ./gradlew clean
+        #     ./gradlew build
+        #     ./gradlew javadoc
+        #   args:
+        #     chdir: "{{ item.path }}"
+        #   with_items: "{{ java_projects }}"
+        #   loop_control:
+        #     label: "{{ item.path }}"
+
+        - name: Package Javadoc into zip
+          ansible.builtin.archive:
+            path:
+              - "{{ item.path }}/plugin/build/docs/javadoc"
+              - "{{ item.path }}/README.md"
+            dest: "{{ item.path }}/plugin/build/docs/{{ hardcoded_project_name }}-{{ hardcoded_project_version }}.zip"
+            format: zip
+          with_items: "{{ java_projects }}"
+          loop_control:
+            label: "{{ item.path }}"
