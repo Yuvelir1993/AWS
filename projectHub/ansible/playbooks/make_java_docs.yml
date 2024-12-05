@@ -48,11 +48,36 @@
         #   loop_control:
         #     label: "{{ item.path }}"
 
+        - name: Create javadoc_package/docs directory
+          file:
+            path: "{{ item.path }}/plugin/build/docs/javadoc_package/docs"
+            state: directory
+            recurse: yes
+          with_items: "{{ java_projects }}"
+          loop_control:
+            label: "{{ item.path }}"
+
+        - name: Copy README.md to javadoc_package
+          copy:
+            src: "{{ item.path }}/README.md"
+            dest: "{{ item.path }}/plugin/build/docs/javadoc_package/README.md"
+          with_items: "{{ java_projects }}"
+          loop_control:
+            label: "{{ item.path }}"
+
+        - name: Copy javadoc contents to javadoc_package/docs
+          copy:
+            src: "{{ item.path }}/plugin/build/docs/javadoc/"
+            dest: "{{ item.path }}/plugin/build/docs/javadoc_package/docs/"
+          with_items: "{{ java_projects }}"
+          loop_control:
+            label: "{{ item.path }}"
+
         - name: Package Javadoc into zip
           ansible.builtin.archive:
             path:
-              - "{{ item.path }}/plugin/build/docs/javadoc"
-              - "{{ item.path }}/README.md"
+              - "{{ item.path }}/plugin/build/docs/javadoc_package/README.md"
+              - "{{ item.path }}/plugin/build/docs/javadoc_package/docs"
             dest: "{{ item.path }}/plugin/build/docs/{{ hardcoded_project_name }}-{{ hardcoded_project_version }}.zip"
             format: zip
           with_items: "{{ java_projects }}"
