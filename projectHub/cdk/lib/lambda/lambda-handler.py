@@ -191,6 +191,9 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project_n
         s3.download_file(bucket, uploaded_object_key, str(local_zip_path))
         print(f"Downloaded {uploaded_object_key} to {local_zip_path}")
 
+        full_project_name = f"{project_name}-{project_version}"
+        s3_key_project = Path(projects_space) / full_project_name
+
         with tempfile.TemporaryDirectory() as temp_extract_dir:
             temp_extract_path = Path(temp_extract_dir)
             with zipfile.ZipFile(local_zip_path, 'r') as zip_ref:
@@ -204,11 +207,9 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project_n
                     if file_path.is_file():
                         relative_path = file_path.relative_to(
                             temp_extract_path)
-                        full_project_name = f"{project_name}-{project_version}"
-                        s3_key = str(Path(projects_space) /
-                                     full_project_name / relative_path)
-                        print(f"Start uploading {
-                              file_path} to {bucket}/{s3_key}")
+
+                        s3_key = str(s3_key_project / relative_path)
+                        print(f"Start uploading {relative_path} to {s3_key}")
 
                         content_type, _ = mimetypes.guess_type(str(file_path))
                         if content_type is None:
@@ -220,17 +221,15 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project_n
                             s3_key,
                             ExtraArgs={'ContentType': content_type}
                         )
-                        print(f"Uploaded {file_path} to {s3_key} in bucket {
-                              bucket} with Content-Type {content_type}")
+                    elif file_path.is_dir():
+                        print(f"The {file_path} is directory...")
             else:
                 print("Validation failed. Uploading error index.html.")
                 error_messages = validator.get_error_messages()
                 error_html_content = generate_error_index_html(error_messages)
 
-                full_project_name = f"{project_name}-{project_version}"
-                s3_key = str(Path(projects_space) /
-                             full_project_name / 'docs' / 'index.html')
-                print(f"Uploading error index.html to {bucket}/{s3_key}")
+                s3_key = str(s3_key_project / 'docs' / 'index.html')
+                print(f"Uploading error index.html to {s3_key}")
 
                 # Check if 'full_project_name' key exists in s3?
                 # Potential place for step functions integration? or sending notification in any other way?
@@ -240,8 +239,6 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project_n
                     Body=error_html_content.encode('utf-8'),
                     ContentType='text/html'
                 )
-                print(f"Uploaded error index.html to {
-                      s3_key} in bucket {bucket}")
     except Exception as e:
         print(f"An error occurred: {e}")
         raise e
