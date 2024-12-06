@@ -1,0 +1,38 @@
+{
+    "Records": [
+        {
+            "eventVersion": "2.1",
+            "eventSource": "aws:s3",
+            "awsRegion": "us-east-1",
+            "eventTime": "2024-11-27T12:00:00.000Z",
+            "eventName": "ObjectCreated:Put",
+            "userIdentity": {
+                "principalId": "AWS:EXAMPLEUSER"
+            },
+            "requestParameters": {
+                "sourceIPAddress": "192.0.2.0"
+            },
+            "responseElements": {
+                "x-amz-request-id": "EXAMPLE123456789",
+                "x-amz-id-2": "EXAMPLEabcd1234xyz5678mnop9qrstuvw="
+            },
+            "s3": {
+                "s3SchemaVersion": "1.0",
+                "configurationId": "testConfigRule",
+                "bucket": {
+                    "name": "project-hub-bucket-green",
+                    "ownerIdentity": {
+                        "principalId": "EXAMPLE"
+                    },
+                    "arn": "arn:aws:s3:::project-hub-bucket-green"
+                },
+                "object": {
+                    "key": "projects/sampleJava-1.0.0.zip",
+                    "size": 1024,
+                    "eTag": "abc123etag456def",
+                    "sequencer": "1234567890ABCDEF"
+                }
+            }
+        }
+    ]
+}

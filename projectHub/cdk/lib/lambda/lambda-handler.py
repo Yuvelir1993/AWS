@@ -35,9 +35,7 @@ class Validator:
         Runs all validation checks and returns True if all pass, False otherwise.
         """
         checks = [
-            self._check_docs_folder_exists,
-            self._check_index_html_exists,
-            self._check_index_html_has_body,
+            self._check_docs_folder_exists
         ]
 
         for check in checks:
@@ -51,25 +49,6 @@ class Validator:
             self.errors.append("Missing 'docs' folder.")
         else:
             self.docs_path = docs_path
-
-    def _check_index_html_exists(self):
-        if hasattr(self, 'docs_path'):
-            index_html_path = self.docs_path / 'index.html'
-            if not index_html_path.is_file():
-                self.errors.append(
-                    "Missing 'index.html' file in 'docs' folder.")
-            else:
-                self.index_html_path = index_html_path
-        else:
-            pass
-
-    def _check_index_html_has_body(self):
-        if hasattr(self, 'index_html_path'):
-            with open(self.index_html_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            if not re.search(r'<body[^>]*>', content, re.IGNORECASE):
-                self.errors.append(
-                    "'index.html' does not contain a <body> element.")
 
     def get_error_messages(self):
         return self.errors
@@ -125,9 +104,6 @@ def generate_error_index_html(error_messages: list) -> str:
             <h2>Submission Rules:</h2>
             <ul>
                 <li>The project must contain a <strong>'docs'</strong> folder.</li>
-                <li>The <strong>'docs'</strong> folder must include an <strong>'index.html'</strong> file.</li>
-                <li>The <strong>'index.html'</strong> file must contain at least a <strong>&lt;body&gt;</strong> element.</li>
-                <!-- Add more rules here if needed -->
             </ul>
         </div>
     </div>
@@ -212,18 +188,19 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: 
             validator = Validator(temp_extract_path)
             if validator.validate():
                 print("Validation passed. Proceeding to upload files.")
-                # may be .walk() would be better?
-                for file_path in temp_extract_path.rglob("*"):
-                    if file_path.is_file():
+                for root, _, files in temp_extract_path.walk():
+                    for name in files:
+                        file_path = Path(root / name)
+
                         relative_path = file_path.relative_to(
                             temp_extract_path)
-
                         s3_key = str(s3_key_project / relative_path)
-                        print(f"Start uploading {relative_path} to {s3_key}")
 
                         content_type, _ = mimetypes.guess_type(str(file_path))
                         if content_type is None:
                             content_type = 'binary/octet-stream'
+
+                        print(f"Start uploading {file_path} to {s3_key}")
 
                         s3.upload_file(
                             str(file_path),
@@ -231,8 +208,6 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: 
                             s3_key,
                             ExtraArgs={'ContentType': content_type}
                         )
-                    elif file_path.is_dir():
-                        print(f"The {file_path} is directory...")
             else:
                 print("Validation failed. Uploading error index.html.")
                 error_messages = validator.get_error_messages()
