@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import os
 import re
 import json
@@ -12,6 +13,16 @@ import html
 print('Loading function...')
 
 s3 = boto3.client('s3')
+
+
+@dataclass
+class Project:
+    name: str
+    version: str
+
+    @property
+    def full_name(self):
+        return f"{self.name}-{self.version}"
 
 
 class Validator:
@@ -164,15 +175,14 @@ def proceed(event, context):
             'body': json.dumps(f"Invalid file name pattern: {uploaded_filename}")
         }
 
-    project_name, project_version = match.groups()
-    print(f"Extracted Project Name: {
-          project_name}, Version: {project_version}")
+    project = Project(name=match.group(1), version=match.group(2))
+    print(f"Extracted Project: {project}")
 
     try:
         generate_doc_links(doc_links_json, bucket,
-                           uploaded_object_key, project_name, project_version)
-        unzip_validate_upload(bucket, uploaded_object_key, projects_space,
-                              project_name, project_version)
+                           uploaded_object_key, project)
+        unzip_validate_upload(bucket, uploaded_object_key,
+                              projects_space, project)
 
     except Exception as e:
         print(f"Error processing {uploaded_object_key} from bucket {
@@ -180,7 +190,7 @@ def proceed(event, context):
         raise e
 
 
-def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project_name, project_version):
+def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: Project):
     """
     Unzipping the uploaded project, validating, and uploading its contents to the `projects_space` in the S3 bucket.
     If validation fails, uploads an error index.html to the 'docs' folder.
@@ -191,8 +201,7 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project_n
         s3.download_file(bucket, uploaded_object_key, str(local_zip_path))
         print(f"Downloaded {uploaded_object_key} to {local_zip_path}")
 
-        full_project_name = f"{project_name}-{project_version}"
-        s3_key_project = Path(projects_space) / full_project_name
+        s3_key_project = Path(projects_space) / project.full_name
 
         with tempfile.TemporaryDirectory() as temp_extract_dir:
             temp_extract_path = Path(temp_extract_dir)
@@ -203,6 +212,7 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project_n
             validator = Validator(temp_extract_path)
             if validator.validate():
                 print("Validation passed. Proceeding to upload files.")
+                # may be .walk() would be better?
                 for file_path in temp_extract_path.rglob("*"):
                     if file_path.is_file():
                         relative_path = file_path.relative_to(
@@ -231,8 +241,9 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project_n
                 s3_key = str(s3_key_project / 'docs' / 'index.html')
                 print(f"Uploading error index.html to {s3_key}")
 
-                # Check if 'full_project_name' key exists in s3?
+                # Check if 'project.full_name' key exists in s3?
                 # Potential place for step functions integration? or sending notification in any other way?
+                # p.s. upload_file may be more preferable
                 s3.put_object(
                     Bucket=bucket,
                     Key=s3_key,
@@ -244,7 +255,7 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project_n
         raise e
 
 
-def generate_doc_links(doc_links_json, bucket, uploaded_object_key, project_name, project_version):
+def generate_doc_links(doc_links_json, bucket, uploaded_object_key, project: Project):
     """
     Generating/updating 'docLinks.json' with all projects infos.
     If the same project (name and version) already exists, it will update the entry.
@@ -255,8 +266,8 @@ def generate_doc_links(doc_links_json, bucket, uploaded_object_key, project_name
         uploaded_object_key.replace('.zip', '/README.md')}"
 
     new_doc_links_entry = {
-        "name": project_name,
-        "version": project_version,
+        "name": project.name,
+        "version": project.version,
         "urlIndexHtml": s3_index_html_url,
         "urlReadme": s3_readme_url
     }
@@ -275,17 +286,17 @@ def generate_doc_links(doc_links_json, bucket, uploaded_object_key, project_name
 
     updated = False
     for index, entry in enumerate(doc_links):
-        if entry['name'] == project_name and entry['version'] == project_version:
+        if entry['name'] == project.name and entry['version'] == project.version:
             doc_links[index] = new_doc_links_entry
             updated = True
             print(f"Updated existing entry for project '{
-                  project_name}' version '{project_version}'.")
+                  project.name}' version '{project.version}'.")
             break
 
     if not updated:
         doc_links.append(new_doc_links_entry)
         print(f"Added new entry for project '{
-              project_name}' version '{project_version}'.")
+              project.name}' version '{project.version}'.")
 
     s3.put_object(
         Bucket=bucket,
