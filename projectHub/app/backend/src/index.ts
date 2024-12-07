@@ -4,16 +4,14 @@ import {
   S3Client,
   S3ServiceException,
 } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 interface DocLink {
   name: string;
   version: string;
   urlIndexHtml: string;
   urlReadme: string;
-  // We will add the signed URLs as new properties
-  signedUrlIndexHtml?: string;
-  signedUrlReadme?: string;
+  cloudFrontUrlIndexHtml?: string;
+  cloudFrontUrlReadme?: string;
 }
 
 const app = express();
@@ -25,6 +23,10 @@ const docLinksJson = "docLinks.json";
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || "eu-central-1",
 });
+
+const cloudFrontBaseUrl = process.env.CLOUD_FRONT_BASE_URL;
+
+console.log(`CloudFront Base URL: ${cloudFrontBaseUrl}, port: ${port}`);
 
 // app.use(
 //   cors({
@@ -69,69 +71,39 @@ app.get("/api/docLinks", async (req: Request, res: Response): Promise<void> => {
     });
 
     const s3ClientResponse = await s3Client.send(getObjectCommand);
-
-    // Step 2: Parse the content into an array of DocLink objects
     const str = await s3ClientResponse.Body?.transformToString();
     console.log(`Retrieved '${docLinksJson}' content: ${str}`);
 
     const docLinks: DocLink[] = JSON.parse(str!);
 
-    // Step 3: For each DocLink, generate signed URLs
     await Promise.all(
       docLinks.map(async (doc) => {
-        // Extract the bucket name and key from the URLs or reconstruct them
+        const indexOfProjectsIndexHtml = doc.urlIndexHtml.indexOf("/projects");
+        const indexOfProjectsReadme = doc.urlReadme.indexOf("/projects");
 
-        // Create commands for the GetObject operation
-        const indexCommand = new GetObjectCommand({
-          Bucket: bucketName,
-          Key: doc.urlIndexHtml.replace(/^.*?projects\//, "projects/"),
-        });
-
-        const readmeCommand = new GetObjectCommand({
-          Bucket: bucketName,
-          Key: doc.urlReadme.replace(/^.*?projects\//, "projects/"),
-        });
-
-        try {
-          // Generate signed URLs for both index.html and README.md
-          const signedIndexUrl = await getSignedUrl(s3Client, indexCommand, {
-            expiresIn: 3600,
-          });
-
-          console.log(
-            `Getting signed url '${signedIndexUrl}' for '${doc.urlIndexHtml}'`
+        if (indexOfProjectsIndexHtml !== -1) {
+          // Extract everything after "/projects"
+          const relativePathIndexHtml = doc.urlIndexHtml.substring(
+            indexOfProjectsIndexHtml
           );
+          // Prepend the CloudFront base URL
+          doc.cloudFrontUrlIndexHtml = `${cloudFrontBaseUrl}${relativePathIndexHtml}`;
+        } else {
+          // Fallback: If for some reason "/projects" is not found, default to the original URL
+          doc.cloudFrontUrlIndexHtml = doc.urlIndexHtml;
+        }
 
-          const signedReadmeUrl = await getSignedUrl(s3Client, readmeCommand, {
-            expiresIn: 3600,
-          });
-
-          // Step 4: Append the signed URLs to the doc object
-          doc.signedUrlIndexHtml = signedIndexUrl;
-          doc.signedUrlReadme = signedReadmeUrl;
-        } catch (caught) {
-          if (
-            caught instanceof Error &&
-            caught.name === "CredentialsProviderError"
-          ) {
-            console.error(
-              `There was an error getting your credentials. Are your local credentials configured?\n${caught.name}: ${caught.message}`
-            );
-          } else {
-            console.error(
-              `Error generating signed URLs for ${doc.name}-${doc.version}:`,
-              caught
-            );
-            throw caught;
-          }
-          // Handle errors as needed (e.g., set signed URLs to null or default values)
-          doc.signedUrlIndexHtml = "";
-          doc.signedUrlReadme = "";
+        if (indexOfProjectsReadme !== -1) {
+          const relativePathReadme = doc.urlReadme.substring(
+            indexOfProjectsReadme
+          );
+          doc.cloudFrontUrlReadme = `${cloudFrontBaseUrl}${relativePathReadme}`;
+        } else {
+          doc.cloudFrontUrlReadme = doc.urlReadme;
         }
       })
     );
 
-    // Step 5: Return the modified array
     res.json(docLinks);
   } catch (caught) {
     if (caught instanceof S3ServiceException) {

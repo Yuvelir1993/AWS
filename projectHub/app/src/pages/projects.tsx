@@ -44,7 +44,7 @@ const Projects = () => {
       <main className="flex-1 p-6">
         {selectedProject ? (
           <iframe
-            src={selectedProject.signedUrlIndexHtml}
+            src={selectedProject.cloudFrontUrlIndexHtml}
             style={{ width: "100%", height: "100vh", border: "none" }}
             title={`${selectedProject.name} Documentation`}
           ></iframe>

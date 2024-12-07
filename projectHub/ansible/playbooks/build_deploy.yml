@@ -6,6 +6,7 @@
     package_name: "projectHubApp.zip"
     app_frontend_path: "../../app"
     app_backend_path: "{{ app_frontend_path }}/backend"
+    cloud_front_base_url: "1234356645654putyournumberhere_and_test"
 
   tasks:
     - name: Ensure build folder exists
@@ -99,3 +100,5 @@
         nohup npm run start > /var/log/projectHubApp.log 2>&1 &
       args:
         chdir: "{{ backend_target_path }}"
+      environment:
+        CLOUD_FRONT_BASE_URL: "{{ cloud_front_base_url }}"
