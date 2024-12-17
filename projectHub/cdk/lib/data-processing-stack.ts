@@ -134,13 +134,13 @@ export class DataProcessingStack extends cdk.Stack {
     );
 
     new cdk.CfnOutput(this, "UploadJava", {
-      value: `aws s3 cp ../app/resources/sampleJava/plugin/build/docs/sampleJava-1.0.0.zip s3://${bucket.bucketName}/${Commons.S3_SPACE_PROJECTS}/sampleJava-1.0.0.zip`,
+      value: `aws s3 cp ../sampleProjects/sampleJava/plugin/build/docs/sampleJava-1.0.0.zip s3://${bucket.bucketName}/${Commons.S3_SPACE_PROJECTS}/sampleJava-1.0.0.zip`,
       description:
         "Test AWS CLI command to upload the Java project's docs zip file to S3",
     });
 
     new cdk.CfnOutput(this, "UploadPython", {
-      value: `aws s3 cp ../app/resources/samplePython/build/samplePython-0.1.0.zip s3://${bucket.bucketName}/${Commons.S3_SPACE_PROJECTS}/PythonApi-0.1.0.zip`,
+      value: `aws s3 cp ../sampleProjects/samplePython/build/samplePython-0.1.0.zip s3://${bucket.bucketName}/${Commons.S3_SPACE_PROJECTS}/PythonApi-0.1.0.zip`,
       description:
         "Test AWS CLI command to upload the Python project's docs zip file to S3",
     });

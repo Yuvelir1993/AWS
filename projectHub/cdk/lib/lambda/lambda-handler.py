@@ -113,6 +113,9 @@ def generate_error_index_html(error_messages: list) -> str:
 
 
 def proceed(event, context):
+    """
+    The entry point into the current Lambda file.
+    """
     print("Received event: " + json.dumps(event, indent=2))
     print("Function Name:", context.function_name)
     print("Function Version:", context.function_version)
@@ -172,35 +175,39 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: 
     If validation fails, uploads an error index.html to the 'docs' folder.
     """
     try:
-        temp_dir = Path(tempfile.gettempdir())
-        local_zip_path = temp_dir / Path(uploaded_object_key).name
+        local_zip_path = Path(tempfile.gettempdir()) / \
+            Path(uploaded_object_key).name
         s3.download_file(bucket, uploaded_object_key, str(local_zip_path))
         print(f"Downloaded {uploaded_object_key} to {local_zip_path}")
 
         s3_key_project = Path(projects_space) / project.full_name
+        print(f"The uploaded project's documentation will be uploaded into '{
+              s3_key_project}'")
 
         with tempfile.TemporaryDirectory() as temp_extract_dir:
-            temp_extract_path = Path(temp_extract_dir)
+            dest_temp_folder_to_extract_into = Path(temp_extract_dir)
             with zipfile.ZipFile(local_zip_path, 'r') as zip_ref:
-                zip_ref.extractall(temp_extract_path)
-            print(f"Extracted {uploaded_object_key} to {temp_extract_path}")
+                zip_ref.extractall(dest_temp_folder_to_extract_into)
+            print(f"Extracted uploaded zip '{
+                  uploaded_object_key}' to '{dest_temp_folder_to_extract_into}'")
 
-            validator = Validator(temp_extract_path)
+            validator = Validator(dest_temp_folder_to_extract_into)
             if validator.validate():
-                print("Validation passed. Proceeding to upload files.")
-                for root, _, files in temp_extract_path.walk():
+                print(
+                    "Validation passed - uploaded project documentation is OK. Proceeding to upload files.")
+                for root, _, files in dest_temp_folder_to_extract_into.walk():
                     for name in files:
                         file_path = Path(root / name)
 
                         relative_path = file_path.relative_to(
-                            temp_extract_path)
+                            dest_temp_folder_to_extract_into)
                         s3_key = str(s3_key_project / relative_path)
 
                         content_type, _ = mimetypes.guess_type(str(file_path))
                         if content_type is None:
                             content_type = 'binary/octet-stream'
 
-                        print(f"Start uploading {file_path} to {s3_key}")
+                        print(f"Start uploading '{file_path}' to '{s3_key}'")
 
                         s3.upload_file(
                             str(file_path),

@@ -2,7 +2,7 @@
 - name: Build and package Java project documentation
   hosts: localhost
   vars:
-    test_projects_folder: "../../app/resources"
+    test_projects_folder: "../../sampleProjects"
     hardcoded_project_name: "sampleJava"
     hardcoded_project_version: "1.0.0"
   tasks:

@@ -2,7 +2,7 @@
 - name: Build and package docs into a common Project Hub zip format
   hosts: localhost
   vars:
-    test_projects_folder: "../../app/resources"
+    test_projects_folder: "../../sampleProjects"
   tasks:
     - name: Find project folders
       find:
