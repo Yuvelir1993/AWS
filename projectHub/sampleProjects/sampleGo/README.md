@@ -35,6 +35,7 @@ go install github.com/swaggo/swag/cmd/swag@latest
 2. **Generate Swagger Docs:**
 ```bash
 swag init -g cmd/server/main.go -o docs
+npx @redocly/cli build-docs docs/swagger.yaml -o docs/index.html
 ```
 3. **Run the Server:**
 ```bash
