@@ -4,11 +4,11 @@ import re
 import json
 import tempfile
 import urllib.parse
-import zipfile
 import mimetypes
 from pathlib import Path
 import boto3
 import html
+import shutil
 
 print('Loading function...')
 
@@ -186,8 +186,7 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: 
 
         with tempfile.TemporaryDirectory() as temp_extract_dir:
             dest_temp_folder_to_extract_into = Path(temp_extract_dir)
-            with zipfile.ZipFile(local_zip_path, 'r') as zip_ref:
-                zip_ref.extractall(dest_temp_folder_to_extract_into)
+            shutil.unpack_archive(local_zip_path, dest_temp_folder_to_extract_into)
             print(f"Extracted uploaded zip '{
                   uploaded_object_key}' to '{dest_temp_folder_to_extract_into}'")
 
@@ -195,9 +194,10 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: 
             if validator.validate():
                 print(
                     "Validation passed - uploaded project documentation is OK. Proceeding to upload files.")
-                for root, _, files in dest_temp_folder_to_extract_into.walk():
+                for root, folders, files in dest_temp_folder_to_extract_into.walk():
                     for name in files:
                         file_path = Path(root / name)
+                        print(f"Proceeding the file {name} located in {file_path}")
 
                         relative_path = file_path.relative_to(
                             dest_temp_folder_to_extract_into)
@@ -215,6 +215,9 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: 
                             s3_key,
                             ExtraArgs={'ContentType': content_type}
                         )
+                        
+                    for folder in folders:
+                        print(f"There is a folder {folder} existing after zip extraction")
             else:
                 print("Validation failed. Uploading error index.html.")
                 error_messages = validator.get_error_messages()
