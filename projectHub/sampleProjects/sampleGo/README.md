@@ -23,21 +23,24 @@ docs.go
 go.mod
 go.sum
 
-
-
 ## Getting Started
-
-1. **Install Dependencies:**
+1. **[Install Go:](https://go.dev/doc/install)**
+```bash
+wget https://dl.google.com/go/go1.23.4.linux-amd64.tar.gz
+rm -rf /usr/local/go && tar -C /usr/local -xzf go1.23.4.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+```
+2. **Install Dependencies:**
 ```bash
 go mod tidy
 go install github.com/swaggo/swag/cmd/swag@latest
 ```
-2. **Generate Swagger Docs:**
+1. **Generate Swagger Docs:**
 ```bash
 swag init -g cmd/server/main.go -o docs
 npx @redocly/cli build-docs docs/swagger.yaml -o docs/index.html
 ```
-3. **Run the Server:**
+1. **Run the Server:**
 ```bash
 go run ./cmd/server
 ```
