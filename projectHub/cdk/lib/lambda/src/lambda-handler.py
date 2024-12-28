@@ -9,6 +9,8 @@ from pathlib import Path
 import boto3
 import html
 import shutil
+from s3.client import S3Client
+from s3.interface import IS3Client
 
 print('Loading function...')
 
@@ -158,18 +160,18 @@ def proceed(event, context):
     print(f"Extracted Project: {project}")
 
     try:
+        s3_client = S3Client(bucket_name=bucket_name)
         generate_doc_links(doc_links_json, bucket,
                            uploaded_object_key, project)
         unzip_validate_upload(bucket, uploaded_object_key,
-                              projects_space, project)
-
+                              projects_space, project, s3_client)
     except Exception as e:
         print(f"Error processing {uploaded_object_key} from bucket {
               bucket}. Exception: {e}")
         raise e
 
 
-def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: Project):
+def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: Project, s3_client: IS3Client):
     """
     Unzipping the uploaded project, validating, and uploading its contents to the `projects_space` in the S3 bucket.
     If validation fails, uploads an error index.html to the 'docs' folder.
@@ -209,12 +211,7 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: 
 
                         print(f"Start uploading '{file_path}' to '{s3_key}'")
 
-                        s3.upload_file(
-                            str(file_path),
-                            bucket,
-                            s3_key,
-                            ExtraArgs={'ContentType': content_type}
-                        )
+                        s3_client.upload_file(key=s3_key, file_path=str(file_path), content_type=content_type)
                         
                     for folder in folders:
                         print(f"There is a folder {folder} existing after zip extraction")
@@ -240,7 +237,7 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: 
         raise e
 
 
-def generate_doc_links(doc_links_json, bucket, uploaded_object_key, project: Project):
+def generate_doc_links(doc_links_json, bucket, uploaded_object_key, project: Project, s3_client: IS3Client):
     """
     Generating/updating 'docLinks.json' with all projects infos.
     If the same project (name and version) already exists, it will update the entry.
