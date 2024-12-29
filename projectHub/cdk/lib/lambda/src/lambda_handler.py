@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import os
+from os import environ
 import re
 import json
 import tempfile
@@ -7,15 +8,32 @@ import urllib.parse
 import mimetypes
 from pathlib import Path
 import boto3
-import html
+from boto3 import resource
 import shutil
-from s3.client import S3Client
-from s3.interface import IS3Client
+
+from aws_lambda_powertools.utilities.data_classes.s3_object_event import S3ObjectLambdaEvent
+from aws_lambda_powertools.utilities.typing import LambdaContext
+
+from helpers import Validator, generate_error_index_html
 
 print('Loading function...')
 
 s3 = boto3.client('s3')
 
+_LAMBDA_S3_RESOURCE = { "resource" : resource('s3'),
+                        "bucket_name" : environ.get("BUCKET_NAME","NONE") }
+
+class LambdaS3Class:
+    """
+    AWS S3 Resource Class
+    """
+    def __init__(self, lambda_s3_resource):
+        """
+        Initialize an S3 Resource
+        """
+        self.resource = lambda_s3_resource["resource"]
+        self.bucket_name = lambda_s3_resource["bucket_name"]
+        self.bucket = self.resource.Bucket(self.bucket_name)
 
 @dataclass
 class Project:
@@ -27,97 +45,14 @@ class Project:
         return f"{self.name}-{self.version}"
 
 
-class Validator:
-    def __init__(self, extract_path: Path):
-        self.extract_path = extract_path
-        self.errors = []
-
-    def validate(self) -> bool:
-        """
-        Runs all validation checks and returns True if all pass, False otherwise.
-        """
-        checks = [
-            self._check_docs_folder_exists
-        ]
-
-        for check in checks:
-            check()
-
-        return len(self.errors) == 0
-
-    def _check_docs_folder_exists(self):
-        docs_path = self.extract_path / 'docs'
-        if not docs_path.is_dir():
-            self.errors.append("Missing 'docs' folder.")
-        else:
-            self.docs_path = docs_path
-
-    def get_error_messages(self):
-        return self.errors
-
-
-def generate_error_index_html(error_messages: list) -> str:
-    """
-    Generates an error index.html content with the provided error messages.
-    """
-    escaped_messages = [html.escape(message) for message in error_messages]
-    error_html = f"""<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Validation Error</title>
-    <style>
-        body {{
-            font-family: Arial, sans-serif;
-            background-color: #f8d7da;
-            color: #721c24;
-            margin: 0;
-            padding: 20px;
-        }}
-        .container {{
-            max-width: 600px;
-            margin: auto;
-        }}
-        h1 {{
-            text-align: center;
-        }}
-        ul {{
-            list-style-type: disc;
-            margin-left: 20px;
-        }}
-        .rules {{
-            background-color: #fff3cd;
-            color: #856404;
-            padding: 15px;
-            margin-top: 20px;
-            border: 1px solid #ffeeba;
-            border-radius: 5px;
-        }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Validation Failed</h1>
-        <p>The uploaded project did not pass the validation checks. Please address the following issues:</p>
-        <ul>
-            {''.join(f'<li>{message}</li>' for message in escaped_messages)}
-        </ul>
-        <div class="rules">
-            <h2>Submission Rules:</h2>
-            <ul>
-                <li>The project must contain a <strong>'docs'</strong> folder.</li>
-            </ul>
-        </div>
-    </div>
-</body>
-</html>"""
-    return error_html
-
-
-def proceed(event, context):
+def handler(event: S3ObjectLambdaEvent, context: LambdaContext):
     """
     The entry point into the current Lambda file.
     """
+
+    global _LAMBDA_S3_RESOURCE
+    s3_resource_class = LambdaS3Class(_LAMBDA_S3_RESOURCE)
+
     print("Received event: " + json.dumps(event, indent=2))
     print("Function Name:", context.function_name)
     print("Function Version:", context.function_version)
@@ -134,6 +69,7 @@ def proceed(event, context):
     projects_space = os.environ.get('PROJECTS_SPACE')
 
     print(f"Environment - BUCKET_NAME: {bucket_name}")
+    print(f"Environment - BUCKET_NAME (s3_resource_class): {s3_resource_class.bucket_name}")
     print(f"Environment - PROJECTS_SPACE: {projects_space}")
     print(f"Environment - DOC_LINKS_JSON: {doc_links_json}")
 
@@ -160,18 +96,18 @@ def proceed(event, context):
     print(f"Extracted Project: {project}")
 
     try:
-        s3_client = S3Client(bucket_name=bucket_name)
-        generate_doc_links(doc_links_json, bucket,
-                           uploaded_object_key, project)
-        unzip_validate_upload(bucket, uploaded_object_key,
-                              projects_space, project, s3_client)
+        generate_doc_links(doc_links_json, uploaded_object_key, project, s3_resource_class)
+        unzip_validate_upload(uploaded_object_key, projects_space, project, s3_resource_class)
+    except KeyError as index_error:
+        print(f"Error 404 processing {uploaded_object_key} from bucket {
+        s3_resource_class.bucket_name}. Exception: {index_error}")
     except Exception as e:
         print(f"Error processing {uploaded_object_key} from bucket {
-              bucket}. Exception: {e}")
+              s3_resource_class.bucket_name}. Exception: {e}")
         raise e
 
 
-def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: Project, s3_client: IS3Client):
+def unzip_validate_upload(uploaded_object_key, projects_space, project: Project, s3_resource: LambdaS3Class):
     """
     Unzipping the uploaded project, validating, and uploading its contents to the `projects_space` in the S3 bucket.
     If validation fails, uploads an error index.html to the 'docs' folder.
@@ -179,7 +115,7 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: 
     try:
         local_zip_path = Path(tempfile.gettempdir()) / \
             Path(uploaded_object_key).name
-        s3.download_file(bucket, uploaded_object_key, str(local_zip_path))
+        s3_resource.bucket.download_file(uploaded_object_key, str(local_zip_path))
         print(f"Downloaded {uploaded_object_key} to {local_zip_path}")
 
         s3_key_project = Path(projects_space) / project.full_name
@@ -211,7 +147,11 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: 
 
                         print(f"Start uploading '{file_path}' to '{s3_key}'")
 
-                        s3_client.upload_file(key=s3_key, file_path=str(file_path), content_type=content_type)
+                        s3_resource.bucket.upload_file(
+                            file_path,
+                            s3_key,
+                            ExtraArgs={'ContentType': content_type}
+                        )
                         
                     for folder in folders:
                         print(f"There is a folder {folder} existing after zip extraction")
@@ -226,8 +166,7 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: 
                 # Check if 'project.full_name' key exists in s3?
                 # Potential place for step functions integration? or sending notification in any other way?
                 # p.s. upload_file may be more preferable
-                s3.put_object(
-                    Bucket=bucket,
+                s3_resource.bucket.put_object(
                     Key=s3_key,
                     Body=error_html_content.encode('utf-8'),
                     ContentType='text/html'
@@ -237,14 +176,14 @@ def unzip_validate_upload(bucket, uploaded_object_key, projects_space, project: 
         raise e
 
 
-def generate_doc_links(doc_links_json, bucket, uploaded_object_key, project: Project, s3_client: IS3Client):
+def generate_doc_links(doc_links_json, uploaded_object_key, project: Project, s3_resource: LambdaS3Class):
     """
     Generating/updating 'docLinks.json' with all projects infos.
     If the same project (name and version) already exists, it will update the entry.
     """
-    s3_index_html_url = f"https://{bucket}.s3.amazonaws.com/{
+    s3_index_html_url = f"https://{s3_resource.bucket_name}.s3.amazonaws.com/{
         uploaded_object_key.replace('.zip', '/docs/index.html')}"
-    s3_readme_url = f"https://{bucket}.s3.amazonaws.com/{
+    s3_readme_url = f"https://{s3_resource.bucket_name}.s3.amazonaws.com/{
         uploaded_object_key.replace('.zip', '/README.md')}"
 
     new_doc_links_entry = {
@@ -257,8 +196,7 @@ def generate_doc_links(doc_links_json, bucket, uploaded_object_key, project: Pro
     doc_links = []
 
     try:
-        metadata_response = s3.get_object(
-            Bucket=bucket, Key=doc_links_json)
+        metadata_response = s3_resource.bucket.get_object(Key=doc_links_json)
         metadata_content = metadata_response['Body'].read().decode('utf-8')
         doc_links = json.loads(metadata_content)
         print(f"Existing {doc_links_json} loaded. Version: {
@@ -280,8 +218,7 @@ def generate_doc_links(doc_links_json, bucket, uploaded_object_key, project: Pro
         print(f"Added new entry for project '{
               project.name}' version '{project.version}'.")
 
-    s3.put_object(
-        Bucket=bucket,
+    s3_resource.bucket.put_object(
         Key=doc_links_json,
         Body=json.dumps(doc_links, indent=2),
         ContentType='application/json'
