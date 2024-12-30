@@ -97,7 +97,11 @@ def handler(event: S3ObjectLambdaEvent, context: LambdaContext):
 
     try:
         generate_doc_links(doc_links_json, uploaded_object_key, project, s3_resource_class)
-        unzip_validate_upload(uploaded_object_key, projects_space, project, s3_resource_class)
+        path_fetched_object_from_s3 = fetch_uploaded_object(uploaded_object_key, s3_resource_class)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            path_dir_to_extract_archive_into = Path(tmp_dir)
+            s3_key_project = f"{projects_space}/{project.full_name}"
+            unzip_validate_upload(s3_resource_class, s3_key_project, path_fetched_object_from_s3, path_dir_to_extract_archive_into)
     except KeyError as index_error:
         print(f"Error 404 processing {uploaded_object_key} from bucket {
         s3_resource_class.bucket_name}. Exception: {index_error}")
@@ -106,71 +110,68 @@ def handler(event: S3ObjectLambdaEvent, context: LambdaContext):
               s3_resource_class.bucket_name}. Exception: {e}")
         raise e
 
+def fetch_uploaded_object(uploaded_object_key: str, s3_resource: LambdaS3Class) -> Path:
+    """
+    Fetching uploaded to S3 object to a temporary directory.
+    """
+    try:
+        local_zip_path = Path(tempfile.gettempdir()) / Path(uploaded_object_key).name
+        s3_resource.bucket.download_file(uploaded_object_key, str(local_zip_path))
+        print(f"Downloaded '{uploaded_object_key}' from S3 to a local temp '{local_zip_path}'")
+        return local_zip_path
+    except Exception as e:
+        print(f"An error during fetching object from s3 occurred: {e}")
+        raise e
 
-def unzip_validate_upload(uploaded_object_key, projects_space, project: Project, s3_resource: LambdaS3Class):
+
+def unzip_validate_upload(s3_resource: LambdaS3Class, s3_key_project: str, path_fetched_object_from_s3: Path, path_dir_to_extract_archive_into: Path):
     """
     Unzipping the uploaded project, validating, and uploading its contents to the `projects_space` in the S3 bucket.
     If validation fails, uploads an error index.html to the 'docs' folder.
     """
     try:
-        local_zip_path = Path(tempfile.gettempdir()) / \
-            Path(uploaded_object_key).name
-        s3_resource.bucket.download_file(uploaded_object_key, str(local_zip_path))
-        print(f"Downloaded {uploaded_object_key} to {local_zip_path}")
+        shutil.unpack_archive(path_fetched_object_from_s3, path_dir_to_extract_archive_into)
+        print(f"Extracted uploaded zip '{
+              path_fetched_object_from_s3}' to '{path_dir_to_extract_archive_into}'")
 
-        s3_key_project = Path(projects_space) / project.full_name
-        print(f"The uploaded project's documentation will be uploaded into '{
-              s3_key_project}'")
+        validator = Validator(path_dir_to_extract_archive_into)
+        if validator.validate():
+            print("Validation passed - uploaded project documentation is OK. Proceeding to upload files.")
+            print(f"The uploaded project's documentation will be uploaded into '{s3_key_project}'")
+            for root, folders, files in path_dir_to_extract_archive_into.walk():
+                for name in files:
+                    file_path = Path(root / name)
+                    print(f"Proceeding the file {name} located in {file_path}")
+                    file_s3_key = f"{s3_key_project}/{str(file_path.relative_to(path_dir_to_extract_archive_into))}"
 
-        with tempfile.TemporaryDirectory() as temp_extract_dir:
-            dest_temp_folder_to_extract_into = Path(temp_extract_dir)
-            shutil.unpack_archive(local_zip_path, dest_temp_folder_to_extract_into)
-            print(f"Extracted uploaded zip '{
-                  uploaded_object_key}' to '{dest_temp_folder_to_extract_into}'")
+                    content_type, _ = mimetypes.guess_type(str(file_path))
+                    if content_type is None:
+                        content_type = 'binary/octet-stream'
 
-            validator = Validator(dest_temp_folder_to_extract_into)
-            if validator.validate():
-                print(
-                    "Validation passed - uploaded project documentation is OK. Proceeding to upload files.")
-                for root, folders, files in dest_temp_folder_to_extract_into.walk():
-                    for name in files:
-                        file_path = Path(root / name)
-                        print(f"Proceeding the file {name} located in {file_path}")
+                    print(f"Start uploading '{file_path}' to '{file_s3_key}'")
 
-                        relative_path = file_path.relative_to(
-                            dest_temp_folder_to_extract_into)
-                        s3_key = str(s3_key_project / relative_path)
+                    s3_resource.bucket.upload_file(
+                        file_path,
+                        file_s3_key,
+                        ExtraArgs={'ContentType': content_type}
+                    )
 
-                        content_type, _ = mimetypes.guess_type(str(file_path))
-                        if content_type is None:
-                            content_type = 'binary/octet-stream'
+                for folder in folders:
+                    print(f"There is a folder {folder} existing after zip extraction")
+        else:
+            error_messages = validator.get_error_messages()
+            error_html_content = generate_error_index_html(error_messages)
+            error_index_html_s3_key = f"{s3_key_project}/docs/index.html"
+            print(f"Validation failed. Uploading error index.html with report to {error_index_html_s3_key}")
 
-                        print(f"Start uploading '{file_path}' to '{s3_key}'")
-
-                        s3_resource.bucket.upload_file(
-                            file_path,
-                            s3_key,
-                            ExtraArgs={'ContentType': content_type}
-                        )
-                        
-                    for folder in folders:
-                        print(f"There is a folder {folder} existing after zip extraction")
-            else:
-                print("Validation failed. Uploading error index.html.")
-                error_messages = validator.get_error_messages()
-                error_html_content = generate_error_index_html(error_messages)
-
-                s3_key = str(s3_key_project / 'docs' / 'index.html')
-                print(f"Uploading error index.html to {s3_key}")
-
-                # Check if 'project.full_name' key exists in s3?
-                # Potential place for step functions integration? or sending notification in any other way?
-                # p.s. upload_file may be more preferable
-                s3_resource.bucket.put_object(
-                    Key=s3_key,
-                    Body=error_html_content.encode('utf-8'),
-                    ContentType='text/html'
-                )
+            # Check if 'project.full_name' key exists in s3?
+            # Potential place for step functions integration? or sending notification in any other way?
+            # p.s. upload_file may be more preferable
+            s3_resource.bucket.put_object(
+                Key=error_index_html_s3_key,
+                Body=error_html_content.encode('utf-8'),
+                ContentType='text/html'
+            )
     except Exception as e:
         print(f"An error occurred: {e}")
         raise e

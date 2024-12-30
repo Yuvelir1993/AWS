@@ -11,11 +11,11 @@ import pytest
 from moto import mock_aws
 import boto3
 from pathlib import Path
+import shutil
 
-CURRENT_PATH = Path(os.path.dirname(os.path.realpath(__file__)))
-
-RESOURCES_DOCS_ZIP_SAMPLE_JAVA = CURRENT_PATH / "resources" / "sampleJava-1.0.0.zip"
-RESOURCES_DOCS_ZIP_SAMPLE_PYTHON = CURRENT_PATH / "resources" / "samplePython-0.1.0.zip"
+CURRENT_PATH: Path = Path(os.path.dirname(os.path.realpath(__file__)))
+RESOURCES_DOCS_ZIP_SAMPLE_JAVA: Path = Path(CURRENT_PATH / "resources" / "sampleJava-1.0.0.zip")
+RESOURCES_DOCS_ZIP_SAMPLE_PYTHON: Path = Path(CURRENT_PATH / "resources" / "samplePython-0.1.0.zip")
 
 
 @pytest.fixture(scope="function")
@@ -39,26 +39,54 @@ def s3(aws_credentials):
 def create_bucket(s3):
     s3.create_bucket(Bucket="bb1")
 
+@pytest.fixture
+def copy_resources_docs(tmp_path):
+    """
+    Copies resource zip files to temporary directories within tmp_path.
+
+    Args:
+        tmp_path (Path): Built-in pytest fixture providing a temporary directory.
+
+    Returns:
+        dict: A dictionary mapping resource directory names to the paths of the copied files.
+    """
+    resources_docs = {
+        "python": RESOURCES_DOCS_ZIP_SAMPLE_PYTHON,
+        "java": RESOURCES_DOCS_ZIP_SAMPLE_JAVA,
+    }
+
+    copied_paths = {}
+
+    for resource_tmp_dir_name, resource_full_path in resources_docs.items():
+        dst = tmp_path / "docs" / resource_tmp_dir_name
+        dst.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src=resource_full_path, dst=dst)
+        copied_file = dst / resource_full_path.name
+
+        assert copied_file.exists(), f"File {copied_file} was not copied successfully."
+        copied_paths[resource_tmp_dir_name] = copied_file
+
+    return copied_paths
+
+
 @pytest.mark.usefixtures("create_bucket")
 class TestUnzipValidateUpload:
-    def test_check_prerequisites(self, create_bucket):
+    def test_check_prerequisites(self, create_bucket, copy_resources_docs):
         """
-        Checking necessary pre-requisites before tests.
+        Checking necessary pre-requisites before tests:
+        1. AWS mocks set up is correct.
+        2. Resources are copied to the correct locations.
         """
         buckets_amount = boto3.client("s3").list_buckets()
         assert len(buckets_amount["Buckets"]) == 1, "There should be only 1 mock bucket created."
         assert Path(RESOURCES_DOCS_ZIP_SAMPLE_PYTHON).is_file(), f"Sample python docu should exist! {RESOURCES_DOCS_ZIP_SAMPLE_PYTHON}"
         assert Path(RESOURCES_DOCS_ZIP_SAMPLE_JAVA).is_file(), f"Sample java docu should exist! {RESOURCES_DOCS_ZIP_SAMPLE_JAVA}"
 
+        for resource_dir, copied_file_path in copy_resources_docs.items():
+            assert copied_file_path.exists(), f"Copied file for {resource_dir} does not exist."
+            assert copied_file_path.is_file(), f"Copied path for {resource_dir} is not a file."
 
-    def test_unpacked_python_doc_zip_has_desired_amount_of_files(self, create_bucket, tmp_path):
-        d = tmp_path / "docs_python_unpacked"
-        d.mkdir()
-        pass
-
-    def test_unpacked_java_doc_zip_has_desired_amount_of_files(self, create_bucket, tmp_path):
-        d = tmp_path / "docs_java_unpacked"
-        d.mkdir()
+    def test_unpacked_doc_zip_has_desired_amount_of_files(self, create_bucket, copy_resources_docs):
         pass
 
     def test_s3_upload_file_count(self, create_bucket):
