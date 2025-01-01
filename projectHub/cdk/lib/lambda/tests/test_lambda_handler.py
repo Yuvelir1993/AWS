@@ -119,8 +119,47 @@ class TestUnzipValidateUpload:
                 f"but {extracted_file_count} files were extracted."
             )
 
-    def test_s3_upload_file_count(self):
-        pass
+    def test_s3_upload_file_count(self, s3, copy_resources_docs, tmp_path):
+        """
+        Test if all objects have been uploaded to S3 for each project.
+        """
+        for project_key, zip_path in copy_resources_docs.items():
+            base_extract_path = tmp_path / "extracted_docs" / project_key
+            base_extract_path.mkdir(parents=True, exist_ok=True)
+
+            unzip_validate_upload(
+                s3_resource=s3,
+                s3_key_project=f"projects/{project_key}",
+                zip_from_s3_path=zip_path,
+                path_dir_to_extract_archive_into=base_extract_path
+            )
+
+            extracted_files = [
+                str(file.relative_to(base_extract_path)).replace("\\", "/")
+                for file in base_extract_path.rglob('*') if file.is_file()
+            ]
+
+            uploaded_keys = [
+                obj.key.replace("\\", "/").replace(f"projects/{project_key}/", "")
+                for obj in s3.bucket.objects.all()
+                if obj.key.startswith(f"projects/{project_key}/")
+            ]
+
+            missing_from_s3 = set(extracted_files) - set(uploaded_keys)
+            extra_in_s3 = set(uploaded_keys) - set(extracted_files)
+
+            print(f" >>>>>>>>>>>>> Uploaded '{len(uploaded_keys)}' files for the '{project_key}' project.")
+
+            if missing_from_s3 or extra_in_s3:
+                print(f"Mismatch detected for project {project_key}!")
+                print(f"Missing from S3 (not uploaded): {missing_from_s3}")
+                print(f"Extra in S3 (unexpected): {extra_in_s3}")
+
+            assert len(extracted_files) == len(uploaded_keys), (
+                f"Mismatch in file count for project {project_key}: "
+                f"Extracted files = {len(extracted_files)}, "
+                f"Uploaded files = {len(uploaded_keys)}"
+            )
 
     def test_validation_passed_for_correct_zip(self):
         pass
