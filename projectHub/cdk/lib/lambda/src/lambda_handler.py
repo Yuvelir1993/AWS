@@ -124,15 +124,15 @@ def fetch_uploaded_object(uploaded_object_key: str, s3_resource: LambdaS3Class) 
         raise e
 
 
-def unzip_validate_upload(s3_resource: LambdaS3Class, s3_key_project: str, path_fetched_object_from_s3: Path, path_dir_to_extract_archive_into: Path):
+def unzip_validate_upload(s3_resource: LambdaS3Class, s3_key_project: str, zip_from_s3_path: Path, path_dir_to_extract_archive_into: Path):
     """
     Unzipping the uploaded project, validating, and uploading its contents to the `projects_space` in the S3 bucket.
     If validation fails, uploads an error index.html to the 'docs' folder.
     """
     try:
-        shutil.unpack_archive(path_fetched_object_from_s3, path_dir_to_extract_archive_into)
+        shutil.unpack_archive(zip_from_s3_path, path_dir_to_extract_archive_into)
         print(f"Extracted uploaded zip '{
-              path_fetched_object_from_s3}' to '{path_dir_to_extract_archive_into}'")
+              zip_from_s3_path}' to '{path_dir_to_extract_archive_into}'")
 
         validator = Validator(path_dir_to_extract_archive_into)
         if validator.validate():

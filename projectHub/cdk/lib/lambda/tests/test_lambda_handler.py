@@ -1,7 +1,10 @@
 # https://github.com/aws-samples/serverless-test-samples/blob/main/python-test-samples/lambda-mock/tests/unit/src/test_sample_lambda.py
 # https://stackoverflow.com/questions/68579648/mock-download-file-from-s3-with-actual-file
 import os
-
+import sys
+import zipfile
+from contextlib import closing
+from os import environ
 import pytest
 # tests:
 # 1. if unpacked zip has desired amount of files
@@ -10,15 +13,17 @@ import pytest
 # 3. if validation not passed for the not correct zip
 from moto import mock_aws
 import boto3
+from boto3 import resource
 from pathlib import Path
 import shutil
+
+from lambda_handler import unzip_validate_upload, LambdaS3Class
 
 CURRENT_PATH: Path = Path(os.path.dirname(os.path.realpath(__file__)))
 RESOURCES_DOCS_ZIP_SAMPLE_JAVA: Path = Path(CURRENT_PATH / "resources" / "sampleJava-1.0.0.zip")
 RESOURCES_DOCS_ZIP_SAMPLE_PYTHON: Path = Path(CURRENT_PATH / "resources" / "samplePython-0.1.0.zip")
 
-
-@pytest.fixture(scope="function")
+@pytest.fixture
 def aws_credentials():
     """Mocked AWS Credentials for moto."""
     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
@@ -27,17 +32,19 @@ def aws_credentials():
     os.environ["AWS_SESSION_TOKEN"] = "testing"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def s3(aws_credentials):
     """
     Return a mocked S3 client
     """
+    _LAMBDA_S3_RESOURCE = {"resource": resource('s3'),
+                           "bucket_name": environ.get("BUCKET_NAME", "project-hub-tests")}
     with mock_aws():
-        yield boto3.client("s3", region_name="us-east-1")
+        yield LambdaS3Class(_LAMBDA_S3_RESOURCE)
 
 @pytest.fixture
 def create_bucket(s3):
-    s3.create_bucket(Bucket="bb1")
+    s3.resource.create_bucket(Bucket="project-hub-tests")
 
 @pytest.fixture
 def copy_resources_docs(tmp_path):
@@ -71,7 +78,7 @@ def copy_resources_docs(tmp_path):
 
 @pytest.mark.usefixtures("create_bucket")
 class TestUnzipValidateUpload:
-    def test_check_prerequisites(self, create_bucket, copy_resources_docs):
+    def test_check_prerequisites(self, copy_resources_docs):
         """
         Checking necessary pre-requisites before tests:
         1. AWS mocks set up is correct.
@@ -86,14 +93,36 @@ class TestUnzipValidateUpload:
             assert copied_file_path.exists(), f"Copied file for {resource_dir} does not exist."
             assert copied_file_path.is_file(), f"Copied path for {resource_dir} is not a file."
 
-    def test_unpacked_doc_zip_has_desired_amount_of_files(self, create_bucket, copy_resources_docs):
+    def test_unpacked_doc_zip_has_desired_amount_of_files(self, s3, copy_resources_docs, tmp_path):
+        """
+        Test unpacking document zips and comparing the file count with the extracted contents.
+        """
+        for project_key, zip_path in copy_resources_docs.items():
+            base_extract_path = tmp_path / "extracted_docs" / project_key
+            base_extract_path.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(zip_path) as archive:
+                zip_file_count = sum(1 for info in archive.infolist() if not info.filename.endswith('/'))
+
+            unzip_validate_upload(
+                s3_resource=s3,
+                s3_key_project=f"projects/{project_key}",
+                zip_from_s3_path=zip_path,
+                path_dir_to_extract_archive_into=base_extract_path
+            )
+
+            extracted_file_count = sum(len(files) for _, _, files in os.walk(base_extract_path))
+
+            assert zip_file_count == extracted_file_count, (
+                f"Mismatch in file count for '{project_key}': "
+                f"ZIP contains {zip_file_count} files, "
+                f"but {extracted_file_count} files were extracted."
+            )
+
+    def test_s3_upload_file_count(self):
         pass
 
-    def test_s3_upload_file_count(self, create_bucket):
+    def test_validation_passed_for_correct_zip(self):
         pass
 
-    def test_validation_passed_for_correct_zip(self, create_bucket):
-        pass
-
-    def test_validation_not_passed_for_incorrect_zip(self, create_bucket):
+    def test_validation_not_passed_for_incorrect_zip(self):
         pass
