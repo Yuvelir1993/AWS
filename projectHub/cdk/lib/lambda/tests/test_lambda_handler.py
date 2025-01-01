@@ -85,8 +85,8 @@ class TestUnzipValidateUpload:
         1. AWS mocks set up is correct.
         2. Resources are copied to the correct locations.
         """
-        buckets_amount = boto3.client("s3").list_buckets()
-        assert len(buckets_amount["Buckets"]) == 1, "There should be only 1 mock bucket created."
+        buckets = boto3.client("s3").list_buckets()
+        assert len(buckets["Buckets"]) == 1, "There should be only 1 mock bucket created."
         assert Path(RESOURCES_DOCS_ZIP_SAMPLE_PYTHON).is_file(), f"Sample python docu should exist! {RESOURCES_DOCS_ZIP_SAMPLE_PYTHON}"
         assert Path(RESOURCES_DOCS_ZIP_SAMPLE_JAVA).is_file(), f"Sample java docu should exist! {RESOURCES_DOCS_ZIP_SAMPLE_JAVA}"
 
