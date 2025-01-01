@@ -1,21 +1,15 @@
 # https://github.com/aws-samples/serverless-test-samples/blob/main/python-test-samples/lambda-mock/tests/unit/src/test_sample_lambda.py
 # https://stackoverflow.com/questions/68579648/mock-download-file-from-s3-with-actual-file
 import os
-import sys
-import zipfile
-from contextlib import closing
-from os import environ
-import pytest
-# tests:
-# 1. if unpacked zip has desired amount of files
-# 1.1 if possible, check that the same amount of files has been uploaded to s3
-# 2. if validation passed for the correct zip
-# 3. if validation not passed for the not correct zip
-from moto import mock_aws
-import boto3
-from boto3 import resource
-from pathlib import Path
 import shutil
+import zipfile
+from os import environ
+from pathlib import Path
+
+import boto3
+import pytest
+from boto3 import resource
+from moto import mock_aws
 
 from lambda_handler import unzip_validate_upload, LambdaS3Class
 
@@ -24,7 +18,14 @@ RESOURCES_DOCS_ZIP_SAMPLE_JAVA: Path = Path(CURRENT_PATH / "resources" / "sample
 RESOURCES_DOCS_ZIP_SAMPLE_PYTHON: Path = Path(CURRENT_PATH / "resources" / "samplePython-0.1.0.zip")
 
 @pytest.fixture
-def aws_credentials():
+def env():
+    """Mocked AWS Credentials for moto."""
+    os.environ["BUCKET_NAME"] = "project-hub-tests"
+    os.environ["DOC_LINKS_JSON"] = "docLinks.json"
+    os.environ["PROJECTS_SPACE"] = "projects"
+
+@pytest.fixture
+def aws_credentials(env):
     """Mocked AWS Credentials for moto."""
     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
@@ -38,7 +39,7 @@ def s3(aws_credentials):
     Return a mocked S3 client
     """
     _LAMBDA_S3_RESOURCE = {"resource": resource('s3'),
-                           "bucket_name": environ.get("BUCKET_NAME", "project-hub-tests")}
+                           "bucket_name": environ.get("BUCKET_NAME")}
     with mock_aws():
         yield LambdaS3Class(_LAMBDA_S3_RESOURCE)
 
