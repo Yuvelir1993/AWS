@@ -212,3 +212,8 @@ class TestUnzipValidateUpload:
 
             assert len(uploaded_keys) == 1, "On failed validation only 1 file should be uploaded!"
             assert uploaded_keys[0] == "docs/index.html", "On failed validation only 'docs/index.html' should be uploaded!"
+
+            body = s3.bucket.Object(f"projects/{project_key}/docs/index.html").get()[
+                "Body"].read().decode("utf-8")
+
+            assert "The uploaded project did not pass the validation checks. Please address the following issues:" in body, "There should be an error-related content in the uploaded 'index.html'!"
