@@ -68,6 +68,7 @@ export class DataProcessingStack extends cdk.Stack {
         runtime: aws_lambda.Runtime.PYTHON_3_13,
         handler: "lambda_handler.handler",
         code: aws_lambda.Code.fromAsset(path.join(__dirname, "lambda")),
+        timeout: cdk.Duration.seconds(7),
         environment: {
           BUCKET_NAME: bucket.bucketName,
           PROJECTS_SPACE: Commons.S3_SPACE_PROJECTS,
