@@ -10,7 +10,7 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `npm run build`                                                                          compile typescript to js
 * `npm run watch`                                                                          watch for changes and compile
 * `npm run test`                                                                           perform the jest unit tests
-* `npx npm-check-updates`                                                                  update all dependencies in package.json
+* `npx npm-check-updates -u`                                                                  update all dependencies in package.json
 
 ## Useful CDK commands
 * `npx cdk ls -c targetEnv=(blue/green)`                                                   list all stacks to be able deploy only one of them
