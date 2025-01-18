@@ -5,12 +5,12 @@ Project which will aggregate your project's documentations and will serve as an 
 # Dev
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
-## Useful NPM commands
+## Useful NPM/NPX commands
 * `npm install`                                                                            install packages
 * `npm run build`                                                                          compile typescript to js
 * `npm run watch`                                                                          watch for changes and compile
 * `npm run test`                                                                           perform the jest unit tests
-* `npx npm-check-updates -u`                                                                  update all dependencies in package.json
+* `npx npm-check-updates -u`                                                               update all dependencies in package.json
 
 ## Useful CDK commands
 * `npx cdk ls -c targetEnv=(blue/green)`                                                   list all stacks to be able deploy only one of them
@@ -18,7 +18,12 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `npx cdk diff -c targetEnv=(blue/green)`                                                 compare deployed stack with current state
 * `npx cdk synth -c targetEnv=(blue/green)`                                                to validate, catch errors and make synthesized CloudFormation template
 * `npx cdk deploy -c targetEnv=(blue/green) --all`                                         deploy all stacks to your (blue/green) AWS environment
+* `npx cdk destroy -c targetEnv=(blue/green) --all`                                        destroy the whole (blue/green) AWS environment
 * `npx cdk deploy ProjectHubEC2InstanceStack-green -c targetEnv=(blue/green)`              deploy this stack to your (blue/green) AWS environment
-* `npx cdk destroy -c targetEnv=(blue/green)`                                              destroy the whole (blue/green) AWS environment
-### Quick CDK commands
-`npx cdk deploy ProjectHubDataProcessingStack-green -c targetEnv=green`
+* `npx cdk deploy ProjectHubDataProcessingStack-green -c targetEnv=(blue/green)`           deploy this stack to your (blue/green) AWS environment
+* `npm run deploy:green`                                                                   deploy all stacks to green environment
+
+### Helper links
+#### See uploaded docu in cloudfront
+Get distribution domain name from "Distribution domain name"
+See uploaded documentation in cloudfront: https://d4jlqmfxnatnf.cloudfront.net/projects/sampleJava-1.0.0/docs/index.html
