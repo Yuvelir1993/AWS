@@ -29,10 +29,27 @@ class LambdaS3Class:
     def __init__(self, lambda_s3_resource):
         """
         Initialize an S3 Resource
+
+        Resource docu: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/resources.html
         """
         self.resource = lambda_s3_resource["resource"]
         self.bucket_name = lambda_s3_resource["bucket_name"]
         self.bucket = self.resource.Bucket(self.bucket_name)
+
+    def get_object_content(self, key):
+        """
+        Retrieve the content of an object from the S3 bucket.
+
+        :param key: The key of the object to retrieve.
+        :return: The content of the object as a string.
+        """
+        try:
+            obj = self.resource.Object(self.bucket_name, key)
+            content = obj.get()["Body"].read().decode("utf-8")
+            return content
+        except Exception as e:
+            print(f"Error retrieving object {key}: {str(e)}")
+            return None
 
 
 @dataclass
@@ -211,12 +228,8 @@ def generate_doc_links(doc_links_json, uploaded_object_key, project: Project, s3
     doc_links = []
 
     try:
-        metadata_response = s3_resource.Object(
-            bucket_name=s3_resource.bucket_name, key=doc_links_json)
-        metadata_content = metadata_response['Body'].read().decode('utf-8')
+        metadata_content = s3_resource.get_object_content(key=doc_links_json)
         doc_links = json.loads(metadata_content)
-        print(f"Existing {doc_links_json} loaded. Version: {
-            metadata_response.get('VersionId', 'N/A')}")
     except Exception:
         print(f"{doc_links_json} does not exist.")
 
