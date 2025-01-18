@@ -103,3 +103,7 @@
         chdir: "{{ backend_target_path }}"
       environment:
         CLOUD_FRONT_BASE_URL: "{{ cloud_front_base_url }}"
+
+    - name: Access the deployment
+      ansible.builtin.debug:
+        msg: "Open the url to access the web app: http://<public_ip_address>:3000/"
