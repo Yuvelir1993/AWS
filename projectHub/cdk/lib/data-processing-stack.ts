@@ -156,7 +156,12 @@ export class DataProcessingStack extends cdk.Stack {
     stackName: string,
     functionName: string
   ): aws_lambda.LayerVersion {
-    const requirementsFile = path.join(__dirname, "lambda", "requirements.txt");
+    const requirementsFile = path.join(
+      __dirname,
+      "lambda",
+      "src",
+      "requirements.txt"
+    );
     const outputDir = path.join(".build", "app");
 
     if (!process.env.SKIP_PIP) {
