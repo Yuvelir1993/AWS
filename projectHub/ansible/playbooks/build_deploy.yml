@@ -6,7 +6,6 @@
     package_name: "projectHubApp.zip"
     app_frontend_path: "../../app"
     app_backend_path: "{{ app_frontend_path }}/backend"
-    cloud_front_base_url: "1234356645654putyournumberhere_and_test"
 
   tasks:
     - name: Ensure build folder exists
@@ -38,6 +37,7 @@
           - "../../app/backend/dist"
           - "../../app/backend/package.json"
           - "../../app/backend/package-lock.json"
+          - "../../app/backend/ecosystem.config.js"
         dest: "{{ build_folder }}/{{ package_name }}"
         format: zip
 
@@ -52,6 +52,7 @@
     zip_file_path: "{{ build_folder }}/{{ package_name }}"
     app_target_path: "{{ project_base_path }}"
     backend_target_path: "{{ project_base_path }}/backend"
+    cloud_front_base_url: "https://d4jlqmfxnatnf.cloudfront.net"
 
   tasks:
     - name: Ensure target directories for App exist
